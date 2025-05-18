@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Reagent Stock Management System v2</title>
+    <!-- XLSX for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Moment.js for date formatting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <!-- html2canvas for JPG export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+       <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --accent-color: #2ecc71;
+            --warning-color: #e74c3c;
+            --light-gray: #f5f5f5;
+            --text-color: #333;
+            --info-color: #f39c12; /* For expiring soon */
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f9f9f9; color: var(--text-color); }
+        .container { max-width: 1300px; margin: 0 auto; padding: 20px; }
+        header { background-color: var(--primary-color); color: white; padding: 20px 0; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        .header-content { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 24px; font-weight: bold; }
+        .logo span { color: var(--accent-color); }
+        .card { background-color: white; border-radius: 8px; box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1); padding: 20px; margin-bottom: 20px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        h2 { font-size: 20px; color: var(--primary-color); }
+        h3 { font-size: 18px; margin-bottom: 10px; }
+        button { background-color: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; font-size: 14px; }
+        button:hover { background-color: var(--secondary-color); }
+        .btn-secondary { background-color: #95a5a6; }
+        .btn-secondary:hover { background-color: #7f8c8d; }
+        .btn-accent { background-color: var(--accent-color); }
+        .btn-accent:hover { background-color: #27ae60; }
+        .btn-warning { background-color: var(--warning-color); }
+        .btn-warning:hover { background-color: #c0392b; }
+        .btn-info { background-color: var(--info-color); }
+        .btn-info:hover { background-color: #d68910; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input, select, textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .row { display: flex; gap: 20px; margin-bottom: 15px; }
+        .col { flex: 1; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #ddd; font-size: 14px; }
+        th { background-color: var(--light-gray); font-weight: 600; }
+        tbody tr:hover { background-color: rgba(52, 152, 219, 0.05); }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .dashboard-card { background-color: white; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.1); padding: 20px; text-align: center; cursor: pointer; transition: transform 0.2s; }
+        .dashboard-card:hover { transform: translateY(-5px); }
+        .dashboard-card h3 { color: var(--primary-color); margin-bottom: 5px; }
+        .dashboard-card p { font-size: 24px; font-weight: bold; }
+        .status-expiring { color: var(--info-color); }
+        .status-expired { color: var(--warning-color); }
+        .status-ok { color: var(--accent-color); } /* For general OK status */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; display: none; overflow-y: auto; padding: 20px 0;}
+        .modal { background-color: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); padding: 25px; width: 100%; max-width: 600px; margin: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .modal-header h3 { margin-bottom: 0; }
+        .close-modal { background: none; border: none; font-size: 20px; color: #666; cursor: pointer; }
+        .close-modal:hover { color: var(--warning-color); }
+        .filters { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; flex-grow: 1; min-width: 150px;}
+        .filter-input { width: 100%;}
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .actions button { padding: 6px 10px; font-size: 13px; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; color: white; }
+        .badge-warning { background-color: var(--info-color); } /* Expiring soon */
+        .badge-danger { background-color: var(--warning-color); } /* Expired */
+        .badge-success { background-color: var(--accent-color); } /* OK */
+        .tab-container { margin-bottom: 20px; }
+        .tabs { display: flex; gap: 2px; margin-bottom: -1px; border-bottom: 1px solid #ddd; }
+        .tab { padding: 10px 20px; cursor: pointer; border: 1px solid transparent; border-bottom: none; border-radius: 5px 5px 0 0; background-color: #f5f5f5; }
+        .tab.active { background-color: white; border-color: #ddd; border-bottom-color: white; color: var(--primary-color); font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        #alerts-container { position: fixed; top: 20px; right: 20px; z-index: 1000; width: 300px; }
+        .alert { background-color: white; border-left: 4px solid; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 10px; padding: 15px; position: relative; animation: slideIn 0.3s ease-out forwards; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .alert-success { border-color: var(--accent-color); }
+        .alert-error { border-color: var(--warning-color); }
+        .alert-warning { border-color: var(--info-color); }
+        .alert-close { position: absolute; top: 10px; right: 10px; background: none; border: none; color: #666; cursor: pointer; padding: 0; font-size: 16px; }
+        .alert p { margin: 0; padding-right: 20px; }
+        .loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(52,152,219,0.3); border-radius: 50%; border-top-color: var(--primary-color); animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+        #app-container { display: block; }
+        .table-responsive { overflow-x: auto; }
+        .action-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
+        .consumption-item { border: 1px solid #eee; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .consumption-item .row { margin-bottom: 10px; }
+        .toggle-deleted-btn { margin-left: auto; }
+    </style>
+</head>
+<body>
+    <div id="alerts-container"></div>
+    <div id="loading" class="loading hidden"><div class="spinner"></div></div>
+    
+    <div id="app-container">
+        <header>
+            <div class="container header-content">
+                <div class="logo">Lab<span>Stock</span> v2</div>
+            </div>
+        </header>
+        
+        <div class="container">
+            <div class="dashboard">
+                <div class="dashboard-card" id="total-reagents-card">
+                    <h3>Total Active Reagents</h3>
+                    <p id="total-reagents-val">0</p>
+                </div>
+                <div class="dashboard-card" id="expiring-soon-card">
+                    <h3>Expiring Soon (30d)</h3>
+                    <p id="expiring-soon-val" class="status-expiring">0</p>
+                </div>
+                <div class="dashboard-card" id="expired-card">
+                    <h3>Expired</h3>
+                    <p id="expired-val" class="status-expired">0</p>
+                </div>
+            </div>
+            
+            <div class="tab-container">
+                <div class="tabs">
+                    <div class="tab active" data-tab="inventory">Inventory</div>
+                    <div class="tab" data-tab="consumption">Consumption Log</div>
+                    <div class="tab" data-tab="stock-log">Stock Receive Log</div>
+                    <div class="tab" data-tab="reports">Reports</div>
+                </div>
+                
+                <!-- Inventory Tab -->
+                <div class="tab-content active" id="inventory-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Reagent Inventory</h2>
+                            <div class="action-buttons">
+                                <button id="register-reagent-btn">Register New Reagent</button>
+                                <button id="receive-stock-btn" class="btn-accent">Receive Existing Stock</button>
+                            </div>
+                        </div>
+                        
+                        <div class="filters">
+                            <div class="filter-group"><label for="filter-name">Name:</label><input type="text" id="filter-name" class="filter-input" placeholder="Filter by name"></div>
+                            <div class="filter-group"><label for="filter-lot">Lot #:</label><input type="text" id="filter-lot" class="filter-input" placeholder="Filter by Lot #"></div>
+                            <div class="filter-group"><label for="filter-analyzer">Analyzer:</label><select id="filter-analyzer" class="filter-input"><option value="">All Analyzers</option></select></div>
+                            <div class="filter-group"><label for="filter-status">Status:</label><select id="filter-status" class="filter-input"><option value="">All Status</option><option value="ok">OK</option><option value="expiring">Expiring Soon</option><option value="expired">Expired</option></select></div>
+                            <div class="filter-group"><label for="filter-expiry-start">Expiry From:</label><input type="date" id="filter-expiry-start" class="filter-input"></div>
+                            <div class="filter-group"><label for="filter-expiry-end">Expiry To:</label><input type="date" id="filter-expiry-end" class="filter-input"></div>
+                            <button id="apply-filters-btn" style="align-self: flex-end;">Apply</button>
+                            <button id="clear-filters-btn" class="btn-secondary" style="align-self: flex-end;">Reset</button>
+                            <button id="toggle-deleted-reagents-btn" class="btn-secondary toggle-deleted-btn" style="align-self: flex-end;">Show Deleted</button>
+                        </div>
+                        
+                        <div id="reagent-bulk-actions-container" class="hidden" style="margin-bottom: 10px; display:flex; gap:10px; align-items:center;">
+                            <span>Bulk Actions:</span>
+                            <select id="reagent-bulk-action-select" style="width:auto;">
+                                <option value="">Select Action</option>
+                                <option value="soft-delete">Soft Delete Selected</option>
+                            </select>
+                            <button id="apply-reagent-bulk-action-btn" class="btn-warning">Apply</button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table id="reagents-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="select-all-reagents-checkbox"></th>
+                                        <th>Name</th>
+                                        <th>Lot #</th>
+                                        <th>Analyzer</th>
+                                        <th>Current Stock</th>
+                                        <th>Unit</th>
+                                        <th>Expiry Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reagents-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Consumption Tab -->
+                <div class="tab-content" id="consumption-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Record & View Consumption</h2>
+                            <button id="add-consumption-btn">Record New Consumption (Batch)</button>
+                        </div>
+                        
+                        <div class="filters">
+                            <div class="filter-group"><label for="consumption-filter-start">Start Date:</label><input type="date" id="consumption-filter-start" class="filter-input"></div>
+                            <div class="filter-group"><label for="consumption-filter-end">End Date:</label><input type="date" id="consumption-filter-end" class="filter-input"></div>
+                            <div class="filter-group"><label for="consumption-filter-reagent">Reagent:</label><select id="consumption-filter-reagent" class="filter-input"><option value="">All Reagents</option></select></div>
+                            <div class="filter-group"><label for="consumption-filter-notes">Notes:</label><input type="text" id="consumption-filter-notes" class="filter-input" placeholder="Search notes"></div>
+                            <button id="apply-consumption-filters-btn" style="align-self: flex-end;">Apply</button>
+                            <button id="clear-consumption-filters-btn" class="btn-secondary" style="align-self: flex-end;">Clear</button>
+                            <button id="toggle-deleted-consumption-btn" class="btn-secondary toggle-deleted-btn" style="align-self: flex-end;">Show Deleted</button>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table id="consumption-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Reagent</th>
+                                        <th>Lot #</th>
+                                        <th>Quantity</th>
+                                        <th>Unit</th>
+                                        <th>Notes</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="consumption-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock Log Tab -->
+                <div class="tab-content" id="stock-log-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Stock Receive Log</h2>
+                            <button id="toggle-deleted-stocklog-btn" class="btn-secondary toggle-deleted-btn">Show Deleted</button>
+                        </div>
+                         <div class="filters">
+                            <div class="filter-group"><label for="stocklog-filter-start">Start Date:</label><input type="date" id="stocklog-filter-start" class="filter-input"></div>
+                            <div class="filter-group"><label for="stocklog-filter-end">End Date:</label><input type="date" id="stocklog-filter-end" class="filter-input"></div>
+                            <div class="filter-group"><label for="stocklog-filter-reagent">Reagent:</label><select id="stocklog-filter-reagent" class="filter-input"><option value="">All Reagents</option></select></div>
+                            <button id="apply-stocklog-filters-btn" style="align-self: flex-end;">Apply</button>
+                            <button id="clear-stocklog-filters-btn" class="btn-secondary" style="align-self: flex-end;">Clear</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="stock-log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date Received</th>
+                                        <th>Reagent Name</th>
+                                        <th>Lot #</th>
+                                        <th>Quantity Received</th>
+                                        <th>Unit</th>
+                                        <th>Notes</th>
+                                        <th>Recorded At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stock-log-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reports Tab -->
+                <div class="tab-content" id="reports-tab">
+                    <div class="card">
+                        <div class="card-header"><h2>Reports</h2></div>
+                        <div class="row">
+                            <div class="col"><div class="card" style="height: 100%;">
+                                <h3>Stock Status Report</h3><p>Current stock levels and status of active reagents.</p>
+                                <button id="stock-report-excel-btn" style="margin-top:10px;">Export to Excel</button>
+                                <button id="stock-report-jpg-btn" class="btn-secondary" style="margin-top:10px;">Export to JPG</button>
+                                <div id="stock-report-render-area" class="hidden"></div> <!-- For JPG rendering -->
+                            </div></div>
+                            <div class="col"><div class="card" style="height: 100%;">
+                                <h3>Consumption History</h3><p>Export consumption for selected period.</p>
+                                <div class="form-group" style="margin-top:10px;"><label for="report-consumption-start-date">Start Date</label><input type="date" id="report-consumption-start-date"></div>
+                                <div class="form-group"><label for="report-consumption-end-date">End Date</label><input type="date" id="report-consumption-end-date"></div>
+                                <button id="consumption-report-excel-btn">Export to Excel</button>
+                                <button id="consumption-report-jpg-btn" class="btn-secondary" style="margin-top:5px;">Export to JPG</button>
+                                <div id="consumption-report-render-area" class="hidden"></div> <!-- For JPG rendering -->
+                            </div></div>
+                            <div class="col"><div class="card" style="height: 100%;">
+                                <h3>Expiry Report</h3><p>Reagents expiring within a selected period.</p>
+                                <div class="form-group" style="margin-top:10px;"><select id="expiry-period">
+                                    <option value="30">Next 30 Days</option><option value="60">Next 60 Days</option>
+                                    <option value="90">Next 90 Days</option><option value="all">All Future Expiry</option>
+                                </select></div>
+                                <button id="expiry-report-excel-btn">Export to Excel</button>
+                                <button id="expiry-report-jpg-btn" class="btn-secondary" style="margin-top:5px;">Export to JPG</button>
+                                <div id="expiry-report-render-area" class="hidden"></div> <!-- For JPG rendering -->
+                            </div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Register Reagent Modal -->
+    <div id="reagent-modal" class="modal-backdrop">
+        <div class="modal">
+            <div class="modal-header"><h3 id="reagent-modal-title">Register New Reagent</h3><button class="close-modal">×</button></div>
+            <form id="reagent-form">
+                <input type="hidden" id="reagent-id">
+                <div class="row">
+                    <div class="col"><div class="form-group"><label for="reagent-name">Reagent Name*</label><input type="text" id="reagent-name" required></div></div>
+                    <div class="col"><div class="form-group"><label for="reagent-lot-number">Lot Number</label><input type="text" id="reagent-lot-number"></div></div>
+                </div>
+                <div class="row">
+                    <div class="col"><div class="form-group"><label for="analyzer">Analyzer*</label><select id="analyzer" required><option value="">Select Analyzer</option><option value="Dimension">Dimension</option><option value="Vitrous CHM">Vitrous CHM</option><option value="Vitrous IMMU">Vitrous IMMU</option><option value="Advia CP">Advia CP</option><option value="Sysmex">Sysmex</option><option value="Biorad">Biorad</option><option value="Other">Other</option></select></div></div>
+                    <div class="col"><div class="form-group"><label for="reagent-description">Description</label><input type="text" id="reagent-description"></div></div>
+                </div>
+                <div class="row">
+                    <div class="col"><div class="form-group"><label for="current-stock">Initial Stock*</label><input type="number" id="current-stock" min="0" step="0.01" required></div></div>
+                    <div class="col"><div class="form-group"><label for="unit">Unit*</label><select id="unit" required><option value="">Select Unit</option><option value="mL">mL</option><option value="L">L</option><option value="g">g</option><option value="kg">kg</option><option value="Tests">Tests</option><option value="Kits">Kits</option><option value="Boxes">Boxes</option><option value="Units">Units</option></select></div></div>
+                </div>
+                <div class="form-group"><label for="expiry-date">Expiry Date*</label><input type="date" id="expiry-date" required></div>
+                <div class="form-group"><label for="storage-conditions">Storage Conditions</label><input type="text" id="storage-conditions" placeholder="e.g., 2-8°C"></div>
+                <div class="form-group"><label for="reagent-notes">Notes</label><textarea id="reagent-notes" rows="2"></textarea></div>
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;"><button type="button" class="btn-secondary cancel-modal">Cancel</button><button type="submit" class="btn-accent">Save Reagent</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Receive Stock Modal -->
+    <div id="receive-stock-modal" class="modal-backdrop">
+        <div class="modal">
+            <div class="modal-header"><h3>Receive Existing Stock</h3><button class="close-modal">×</button></div>
+            <form id="receive-stock-form">
+                <div class="form-group">
+                    <label for="receive-reagent-select">Select Reagent (Name - Lot#)*</label>
+                    <select id="receive-reagent-select" required><option value="">Loading reagents...</option></select>
+                </div>
+                <div class="row">
+                    <div class="col"><div class="form-group"><label for="receive-quantity">Quantity Received*</label><input type="number" id="receive-quantity" min="0.01" step="0.01" required></div></div>
+                    <div class="col"><div class="form-group"><label for="receive-unit">Unit</label><input type="text" id="receive-unit" readonly></div></div>
+                </div>
+                <div class="form-group"><label for="receive-date">Date Received*</label><input type="date" id="receive-date" required></div>
+                <div class="form-group"><label for="receive-notes">Notes</label><textarea id="receive-notes" rows="2"></textarea></div>
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;"><button type="button" class="btn-secondary cancel-modal">Cancel</button><button type="submit" class="btn-accent">Add to Stock</button></div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Consumption Modal (Batch Mode) -->
+    <div id="consumption-modal" class="modal-backdrop">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header"><h3 id="consumption-modal-title">Record Consumption</h3><button class="close-modal">×</button></div>
+            <form id="consumption-form">
+                <input type="hidden" id="consumption-edit-id"> <!-- Used when editing a single entry -->
+                <div id="consumption-items-container">
+                    <!-- Consumption items will be added here by JS -->
+                </div>
+                <button type="button" id="add-consumption-item-btn" class="btn-secondary" style="margin-top:10px;">Add Another Reagent</button>
+                <hr style="margin: 20px 0;">
+                <div class="form-group">
+                    <label for="consumption-batch-date">Date of Consumption*</label>
+                    <input type="date" id="consumption-batch-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="consumption-batch-notes">Overall Notes (Optional)</label>
+                    <textarea id="consumption-batch-notes" rows="2"></textarea>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+                    <button type="button" class="btn-secondary cancel-modal">Cancel</button>
+                    <button type="submit" class="btn-accent">Save Consumption(s)</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirm-modal" class="modal-backdrop">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header"><h3>Confirm Action</h3><button class="close-modal">×</button></div>
+            <p id="delete-confirm-message">Are you sure you want to delete this item? This action cannot be undone.</p>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-secondary cancel-modal">Cancel</button>
+                <button id="confirm-delete-btn" class="btn-warning">Confirm</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    // --- START OF SCRIPT ---
+    // DOM Elements
+    const loadingIndicator = document.getElementById('loading');
+    const alertsContainer = document.getElementById('alerts-container');
+
+    // --- Supabase Setup ---
+    // !!! REPLACE WITH YOUR ACTUAL SUPABASE URL AND ANON KEY !!!
+    const SUPABASE_URL = 'https://afsafginwgrkflykgshe.supabase.co'; // e.g., 'https://xyz.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmc2FmZ2lud2dya2ZseWtnc2hlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc1NTAyMzQsImV4cCI6MjA2MzEyNjIzNH0.CeIzbdyxL8QOcs0mbR-29Xc9wtEhYxQ7QOIKSH_mZRI'; // Public Anon Key
+
+    if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+        console.error("Supabase URL or Anon Key is not configured. Please update the script.");
+        alert("Supabase is not configured. Application will not work correctly. Please check console.");
+    }
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Global state (will be populated from Supabase)
+    let reagentsCache = [];
+    let consumptionCache = [];
+    let stockLogCache = [];
+    
+    let deleteTarget = { id: null, ids: null, type: null, permanent: false };
+    
+    let showDeletedReagents = false;
+    let showDeletedConsumption = false;
+    let showDeletedStockLog = false;
+
+    // --- Utility Functions ---
+    function showLoading() { loadingIndicator.classList.remove('hidden'); }
+    function hideLoading() { loadingIndicator.classList.add('hidden'); }
+
+    function showAlert(message, type = 'success', duration = 3500) {
+        const alertDiv = document.createElement('div');
+        alertDiv.classList.add('alert', `alert-${type}`);
+        const messageP = document.createElement('p');
+        messageP.textContent = message;
+        const closeBtn = document.createElement('button');
+        closeBtn.classList.add('alert-close');
+        closeBtn.innerHTML = '×';
+        closeBtn.onclick = () => alertDiv.remove();
+        alertDiv.appendChild(messageP);
+        alertDiv.appendChild(closeBtn);
+        alertsContainer.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), duration);
+    }
+
+    // generateId() is no longer needed as Supabase will generate UUIDs for primary keys.
+    function formatDate(dateString, format = 'YYYY-MM-DD') { return dateString ? moment(dateString).format(format) : ''; }
+    
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', initApp);
+
+    async function initApp() {
+        showLoading();
+        initTabs();
+        initModalsAndForms();
+        initEventListeners();
+        
+        await loadAllData(); // This will now fetch from Supabase
+        updateDashboard();
+        initReportDates();
+        hideLoading();
+    }
+
+    async function loadAllData() {
+        showLoading();
+        try {
+            const [reagentsResult, consumptionResult, stockLogResult] = await Promise.all([
+                supabase.from('reagents').select('*').order('name', { ascending: true }),
+                supabase.from('consumption_log').select('*').order('date', { ascending: false }),
+                supabase.from('stock_receive_log').select('*').order('date_received', { ascending: false })
+            ]);
+
+            if (reagentsResult.error) throw reagentsResult.error;
+            reagentsCache = reagentsResult.data || [];
+
+            if (consumptionResult.error) throw consumptionResult.error;
+            consumptionCache = consumptionResult.data || [];
+
+            if (stockLogResult.error) throw stockLogResult.error;
+            stockLogCache = stockLogResult.data || [];
+
+            populateReagentsTable();
+            populateConsumptionTable();
+            populateStockLogTable();
+            populateFilterDropdowns();
+
+        } catch (error) {
+            console.error("Error loading data from Supabase:", error);
+            showAlert(`Error loading data: ${error.message}`, 'error', 10000);
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    function populateFilterDropdowns() {
+        populateAnalyzerFilter();
+        populateConsumptionReagentFilter();
+        populateStockLogReagentFilter();
+    }
+
+    // --- Tabs, Modals, Event Listeners (largely unchanged, except for async calls) ---
+    // (Keep initTabs, initModalsAndForms, initEventListeners, initReportDates as they are,
+    //  they mostly deal with UI elements and don't directly call storage)
+    //  Make sure functions called by event listeners that perform data operations are async
+    //  and await Supabase calls.
+
+    function initTabs() {
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+    }
+    
+    function setActiveTab(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+        document.getElementById(`${tabId}-tab`).classList.add('active');
+    }
+
+    function initModalsAndForms() {
+        document.getElementById('register-reagent-btn').addEventListener('click', () => openReagentModal());
+        document.getElementById('reagent-form').addEventListener('submit', handleReagentFormSubmit); // Now async
+
+        document.getElementById('receive-stock-btn').addEventListener('click', openReceiveStockModal);
+        document.getElementById('receive-stock-form').addEventListener('submit', handleReceiveStockFormSubmit); // Now async
+        document.getElementById('receive-reagent-select').addEventListener('change', handleReceiveReagentSelectChange);
+
+        document.getElementById('add-consumption-btn').addEventListener('click', () => openConsumptionModal());
+        document.getElementById('consumption-form').addEventListener('submit', handleConsumptionFormSubmit); // Now async
+        document.getElementById('add-consumption-item-btn').addEventListener('click', addConsumptionItemRow);
+
+        document.querySelectorAll('.close-modal, .cancel-modal').forEach(btn => btn.addEventListener('click', closeAllModals));
+        document.getElementById('confirm-delete-btn').addEventListener('click', handleConfirmDelete); // Now async
+    }
+
+    function initEventListeners() {
+        document.getElementById('total-reagents-card').addEventListener('click', () => {
+            setActiveTab('inventory');
+            document.getElementById('filter-status').value = ''; applyReagentFilters();
+        });
+        document.getElementById('expiring-soon-card').addEventListener('click', () => {
+            setActiveTab('inventory');
+            document.getElementById('filter-status').value = 'expiring'; applyReagentFilters();
+        });
+        document.getElementById('expired-card').addEventListener('click', () => {
+            setActiveTab('inventory');
+            document.getElementById('filter-status').value = 'expired'; applyReagentFilters();
+        });
+
+        document.getElementById('apply-filters-btn').addEventListener('click', applyReagentFilters);
+        document.getElementById('clear-filters-btn').addEventListener('click', clearReagentFilters);
+        document.getElementById('select-all-reagents-checkbox').addEventListener('change', handleSelectAllReagentsChange);
+        document.getElementById('apply-reagent-bulk-action-btn').addEventListener('click', handleReagentBulkAction); // Now async
+        document.getElementById('toggle-deleted-reagents-btn').addEventListener('click', () => {
+            showDeletedReagents = !showDeletedReagents;
+            document.getElementById('toggle-deleted-reagents-btn').textContent = showDeletedReagents ? 'Hide Deleted' : 'Show Deleted';
+            populateReagentsTable();
+        });
+
+        document.getElementById('apply-consumption-filters-btn').addEventListener('click', applyConsumptionFilters);
+        document.getElementById('clear-consumption-filters-btn').addEventListener('click', clearConsumptionFilters);
+        document.getElementById('toggle-deleted-consumption-btn').addEventListener('click', () => {
+            showDeletedConsumption = !showDeletedConsumption;
+            document.getElementById('toggle-deleted-consumption-btn').textContent = showDeletedConsumption ? 'Hide Deleted' : 'Show Deleted';
+            populateConsumptionTable();
+        });
+
+        document.getElementById('apply-stocklog-filters-btn').addEventListener('click', applyStockLogFilters);
+        document.getElementById('clear-stocklog-filters-btn').addEventListener('click', clearStockLogFilters);
+        document.getElementById('toggle-deleted-stocklog-btn').addEventListener('click', () => {
+            showDeletedStockLog = !showDeletedStockLog;
+            document.getElementById('toggle-deleted-stocklog-btn').textContent = showDeletedStockLog ? 'Hide Deleted' : 'Show Deleted';
+            populateStockLogTable();
+        });
+
+        document.getElementById('stock-report-excel-btn').addEventListener('click', () => generateStockReport(false));
+        document.getElementById('stock-report-jpg-btn').addEventListener('click', () => generateStockReport(true));
+        
+        document.getElementById('consumption-report-excel-btn').addEventListener('click', () => generateConsumptionReport(false));
+        document.getElementById('consumption-report-jpg-btn').addEventListener('click', () => generateConsumptionReport(true));
+
+        document.getElementById('expiry-report-excel-btn').addEventListener('click', () => generateExpiryReport(false));
+        document.getElementById('expiry-report-jpg-btn').addEventListener('click', () => generateExpiryReport(true));
+    }
+    
+    function initReportDates() {
+        const today = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        
+        document.getElementById('report-consumption-start-date').valueAsDate = thirtyDaysAgo;
+        document.getElementById('report-consumption-end-date').valueAsDate = today;
+    }
+
+    // --- Modal Handling (openModal, closeModal, openReagentModal etc. are mostly UI, no major changes needed for Supabase initially) ---
+    function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+    function closeAllModals() { document.querySelectorAll('.modal-backdrop').forEach(m => m.style.display = 'none'); }
+
+    function openReagentModal(reagentId = null) { // reagentId is now UUID from DB
+        const form = document.getElementById('reagent-form');
+        form.reset();
+        document.getElementById('reagent-id').value = '';
+        document.getElementById('reagent-modal-title').textContent = 'Register New Reagent';
+
+        if (reagentId) {
+            const reagent = reagentsCache.find(r => r.id === reagentId && !r.is_deleted);
+            if (reagent) {
+                document.getElementById('reagent-modal-title').textContent = 'Edit Reagent';
+                document.getElementById('reagent-id').value = reagent.id; // DB UUID
+                document.getElementById('reagent-name').value = reagent.name;
+                document.getElementById('reagent-lot-number').value = reagent.lot_number || '';
+                document.getElementById('analyzer').value = reagent.analyzer;
+                document.getElementById('reagent-description').value = reagent.description || '';
+                document.getElementById('current-stock').value = reagent.current_stock;
+                document.getElementById('current-stock').readOnly = true; 
+                document.getElementById('current-stock').title = "Stock quantity can only be changed via 'Receive Stock' or 'Record Consumption'";
+                document.getElementById('unit').value = reagent.unit;
+                document.getElementById('expiry-date').value = reagent.expiry_date; // Should be YYYY-MM-DD
+                document.getElementById('storage-conditions').value = reagent.storage_conditions || '';
+                document.getElementById('reagent-notes').value = reagent.notes || '';
+            } else {
+                showAlert("Reagent not found for editing.", "error"); return;
+            }
+        } else {
+             document.getElementById('current-stock').readOnly = false;
+             document.getElementById('current-stock').title = "";
+             const defaultExpiryDate = new Date();
+             defaultExpiryDate.setFullYear(defaultExpiryDate.getFullYear() + 1);
+             document.getElementById('expiry-date').valueAsDate = defaultExpiryDate;
+        }
+        openModal('reagent-modal');
+    }
+    
+    function openReceiveStockModal() {
+        const form = document.getElementById('receive-stock-form');
+        form.reset();
+        const reagentSelect = document.getElementById('receive-reagent-select');
+        reagentSelect.innerHTML = '<option value="">Select Reagent</option>';
+        
+        reagentsCache.filter(r => !r.is_deleted).sort((a,b) => a.name.localeCompare(b.name)).forEach(r => {
+            const option = document.createElement('option');
+            option.value = r.id; // DB UUID
+            option.textContent = `${r.name} - Lot: ${r.lot_number || 'N/A'} (Current: ${r.current_stock} ${r.unit})`;
+            option.dataset.unit = r.unit;
+            reagentSelect.appendChild(option);
+        });
+        document.getElementById('receive-unit').value = '';
+        document.getElementById('receive-date').valueAsDate = new Date();
+        openModal('receive-stock-modal');
+    }
+
+    function handleReceiveReagentSelectChange() {
+        const reagentSelect = document.getElementById('receive-reagent-select');
+        const unitField = document.getElementById('receive-unit');
+        if (reagentSelect.value) {
+            const selectedOption = reagentSelect.options[reagentSelect.selectedIndex];
+            unitField.value = selectedOption.dataset.unit || '';
+        } else {
+            unitField.value = '';
+        }
+    }
+    
+    function openConsumptionModal(consumptionIdToEdit = null) { // consumptionId is DB UUID
+        const form = document.getElementById('consumption-form');
+        form.reset();
+        document.getElementById('consumption-edit-id').value = '';
+        const itemsContainer = document.getElementById('consumption-items-container');
+        itemsContainer.innerHTML = '';
+        document.getElementById('add-consumption-item-btn').classList.remove('hidden');
+
+        if (consumptionIdToEdit) {
+            const record = consumptionCache.find(c => c.id === consumptionIdToEdit && !c.is_deleted);
+            if (!record) {
+                showAlert('Consumption record not found or already deleted.', 'error');
+                return;
+            }
+            document.getElementById('consumption-modal-title').textContent = 'Edit Consumption Record';
+            document.getElementById('consumption-edit-id').value = record.id; // DB UUID
+            addConsumptionItemRow(record.reagent_id, record.quantity, record.notes); 
+            document.getElementById('consumption-batch-date').value = record.date;
+            document.getElementById('consumption-batch-notes').value = record.overall_notes || ''; 
+            document.getElementById('add-consumption-item-btn').classList.add('hidden'); 
+        } else {
+            document.getElementById('consumption-modal-title').textContent = 'Record Consumption (Batch)';
+            addConsumptionItemRow(); 
+            document.getElementById('consumption-batch-date').valueAsDate = new Date();
+        }
+        openModal('consumption-modal');
+    }
+
+    function addConsumptionItemRow(reagentId = '', quantity = '', notes = '') { // reagentId is DB UUID
+        const itemsContainer = document.getElementById('consumption-items-container');
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('consumption-item');
+        const pseudoItemId = Math.random().toString(36).substring(2); // For client-side unique IDs in form
+
+        let reagentOptions = '<option value="">Select Reagent</option>';
+        reagentsCache.filter(r => !r.is_deleted && r.current_stock > 0).sort((a,b) => a.name.localeCompare(b.name)).forEach(r => {
+            reagentOptions += `<option value="${r.id}" data-unit="${r.unit}" ${r.id === reagentId ? 'selected' : ''}>
+                ${r.name} - Lot: ${r.lot_number || 'N/A'} (Stock: ${r.current_stock} ${r.unit})
+            </option>`;
+        });
+
+        itemDiv.innerHTML = `
+            <div class="row">
+                <div class="col"><div class="form-group">
+                    <label for="consumption-reagent-${pseudoItemId}">Reagent*</label>
+                    <select id="consumption-reagent-${pseudoItemId}" class="consumption-reagent-select" required>${reagentOptions}</select>
+                </div></div>
+            </div>
+            <div class="row">
+                <div class="col"><div class="form-group">
+                    <label for="consumption-quantity-${pseudoItemId}">Quantity*</label>
+                    <input type="number" id="consumption-quantity-${pseudoItemId}" class="consumption-quantity-input" min="0.01" step="0.01" value="${quantity}" required>
+                </div></div>
+                <div class="col"><div class="form-group">
+                    <label for="consumption-unit-${pseudoItemId}">Unit</label>
+                    <input type="text" id="consumption-unit-${pseudoItemId}" class="consumption-unit-input" readonly>
+                </div></div>
+            </div>
+             <div class="form-group item-notes ${document.getElementById('consumption-edit-id').value ? '' : 'hidden'}">
+                <label for="consumption-item-notes-${pseudoItemId}">Item Notes</label>
+                <textarea id="consumption-item-notes-${pseudoItemId}" rows="1">${notes}</textarea>
+            </div>
+            <button type="button" class="btn-warning remove-consumption-item-btn" style="font-size:12px; padding: 4px 8px;">Remove</button>
+        `;
+        itemsContainer.appendChild(itemDiv);
+
+        const newSelect = itemDiv.querySelector(`#consumption-reagent-${pseudoItemId}`);
+        const newUnitInput = itemDiv.querySelector(`#consumption-unit-${pseudoItemId}`);
+        
+        if (reagentId) {
+            const selectedOpt = newSelect.options[newSelect.selectedIndex];
+            if (selectedOpt) newUnitInput.value = selectedOpt.dataset.unit || '';
+        }
+
+        newSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            newUnitInput.value = selectedOption.dataset.unit || '';
+        });
+        itemDiv.querySelector('.remove-consumption-item-btn').addEventListener('click', () => itemDiv.remove());
+        if (document.getElementById('consumption-edit-id').value) {
+            itemDiv.querySelector('.item-notes').classList.remove('hidden');
+        }
+    }
+
+
+    // --- Data Handling with Supabase ---
+    async function handleReagentFormSubmit(e) {
+        e.preventDefault();
+        showLoading();
+        const reagentId = document.getElementById('reagent-id').value; // This will be DB UUID if editing
+        
+        const reagentData = {
+            name: document.getElementById('reagent-name').value.trim(),
+            lot_number: document.getElementById('reagent-lot-number').value.trim() || null,
+            analyzer: document.getElementById('analyzer').value,
+            description: document.getElementById('reagent-description').value.trim(),
+            unit: document.getElementById('unit').value,
+            expiry_date: document.getElementById('expiry-date').value,
+            storage_conditions: document.getElementById('storage-conditions').value.trim(),
+            notes: document.getElementById('reagent-notes').value.trim(),
+            // current_stock handled below
+            // is_deleted, deleted_at managed by soft delete logic
+            // created_at, updated_at managed by DB or set here
+        };
+
+        if (!reagentData.name || !reagentData.analyzer || !reagentData.unit || !reagentData.expiry_date) {
+             showAlert('Please fill all required fields (*).', 'error');
+             hideLoading(); return;
+        }
+        
+        // Prevent duplicate reagent (Name + Lot Number combination for active reagents)
+        // This check should ideally be a database constraint or checked server-side for robustness.
+        // For client-side, we check the cache:
+        const duplicateCheck = reagentsCache.find(r => 
+            !r.is_deleted &&
+            r.name === reagentData.name && 
+            r.lot_number === reagentData.lot_number &&
+            r.id !== reagentId // Exclude self if editing
+        );
+        if (duplicateCheck) {
+            showAlert('An active reagent with the same name and lot number already exists.', 'error');
+            hideLoading(); return;
+        }
+
+        let result;
+        if (reagentId) { // Edit existing reagent
+            // current_stock is not directly edited here. It's changed via receive/consume.
+            // We only update other fields.
+            reagentData.updated_at = new Date().toISOString(); // Manually set for Supabase if no trigger
+            result = await supabase.from('reagents').update(reagentData).eq('id', reagentId).select();
+        } else { // Add new reagent
+            reagentData.current_stock = parseFloat(document.getElementById('current-stock').value) || 0;
+            if (isNaN(reagentData.current_stock) || reagentData.current_stock < 0) {
+                 showAlert('Initial stock must be a valid non-negative number.', 'error');
+                 hideLoading(); return;
+            }
+            // created_at, updated_at will be set by DB defaults if defined, or set them here.
+            // is_deleted defaults to false in DB.
+            result = await supabase.from('reagents').insert(reagentData).select();
+        }
+
+        if (result.error) {
+            console.error("Supabase error (reagent form):", result.error);
+            showAlert(`Error saving reagent: ${result.error.message}`, 'error');
+        } else {
+            showAlert(reagentId ? 'Reagent updated successfully.' : 'Reagent registered successfully.', 'success');
+            await loadAllData(); // Reload all data to reflect changes
+            updateDashboard();
+            closeAllModals();
+        }
+        hideLoading();
+    }
+
+    async function handleReceiveStockFormSubmit(e) {
+        e.preventDefault();
+        showLoading();
+        const reagentId = document.getElementById('receive-reagent-select').value; // DB UUID
+        const quantityReceived = parseFloat(document.getElementById('receive-quantity').value);
+        const dateReceived = document.getElementById('receive-date').value;
+        const notes = document.getElementById('receive-notes').value.trim();
+
+        if (!reagentId || isNaN(quantityReceived) || quantityReceived <= 0 || !dateReceived) {
+            showAlert('Please select a reagent, enter a valid quantity, and date.', 'error');
+            hideLoading(); return;
+        }
+
+        const reagent = reagentsCache.find(r => r.id === reagentId && !r.is_deleted);
+        if (!reagent) {
+            showAlert('Selected reagent not found or is deleted.', 'error');
+            hideLoading(); return;
+        }
+
+        const newStock = reagent.current_stock + quantityReceived;
+
+        // Update reagent stock in DB
+        const { error: reagentUpdateError } = await supabase
+            .from('reagents')
+            .update({ current_stock: newStock, updated_at: new Date().toISOString() })
+            .eq('id', reagentId);
+
+        if (reagentUpdateError) {
+            console.error("Supabase error (updating reagent stock):", reagentUpdateError);
+            showAlert(`Error updating reagent stock: ${reagentUpdateError.message}`, 'error');
+            hideLoading(); return;
+        }
+
+        // Log stock reception
+        const logEntry = {
+            reagent_id: reagent.id,
+            reagent_name: reagent.name, // Denormalized
+            lot_number: reagent.lot_number, // Denormalized
+            quantity_received: quantityReceived,
+            unit: reagent.unit,
+            date_received: dateReceived,
+            notes: notes,
+            // created_at by DB, is_deleted by DB default
+        };
+        const { error: logInsertError } = await supabase.from('stock_receive_log').insert(logEntry);
+
+        if (logInsertError) {
+            console.error("Supabase error (logging stock receive):", logInsertError);
+            // Potentially rollback stock update or notify user of inconsistency
+            showAlert(`Error logging stock reception: ${logInsertError.message}. Stock was updated, but log failed.`, 'error');
+        } else {
+            showAlert('Stock received and logged successfully.', 'success');
+        }
+        
+        await loadAllData();
+        updateDashboard();
+        closeAllModals();
+        hideLoading();
+    }
+
+    async function handleConsumptionFormSubmit(e) {
+        e.preventDefault();
+        showLoading();
+
+        const consumptionEditId = document.getElementById('consumption-edit-id').value; // DB UUID if editing
+        const consumptionDate = document.getElementById('consumption-batch-date').value;
+        const overallNotes = document.getElementById('consumption-batch-notes').value.trim();
+        
+        const consumptionItemsData = [];
+        const itemRows = document.querySelectorAll('#consumption-items-container .consumption-item');
+
+        if (itemRows.length === 0) {
+            showAlert('Please add at least one reagent to consume.', 'error');
+            hideLoading(); return;
+        }
+        
+        let isValid = true;
+        for (const row of itemRows) {
+            const reagentId = row.querySelector('.consumption-reagent-select').value; // DB UUID
+            const quantity = parseFloat(row.querySelector('.consumption-quantity-input').value);
+            const unit = row.querySelector('.consumption-unit-input').value;
+            const itemNotes = row.querySelector('textarea[id^="consumption-item-notes-"]').value.trim();
+
+            if (!reagentId || isNaN(quantity) || quantity <= 0) {
+                isValid = false; break;
+            }
+            const reagent = reagentsCache.find(r => r.id === reagentId && !r.is_deleted);
+            if (!reagent) {
+                showAlert(`Reagent for one of the items not found.`, 'error'); isValid = false; break;
+            }
+            // Stock check happens before DB update
+            if (!consumptionEditId && quantity > reagent.current_stock) { 
+                showAlert(`Not enough stock for ${reagent.name} (Lot: ${reagent.lot_number || 'N/A'}). Requested: ${quantity}, Available: ${reagent.current_stock}`, 'error');
+                isValid = false; break;
+            }
+            consumptionItemsData.push({ reagentId, quantity, unit, reagent, itemNotes });
+        }
+
+        if (!isValid || !consumptionDate) {
+            showAlert('Please fill all required fields for each item and set a consumption date.', 'error');
+            hideLoading(); return;
+        }
+        
+        // --- DB Operations ---
+        if (consumptionEditId) { // Editing existing consumption
+            const originalRecord = consumptionCache.find(c => c.id === consumptionEditId);
+            if (!originalRecord) {
+                showAlert('Original consumption record not found.', 'error'); hideLoading(); return;
+            }
+            
+            const editedItem = consumptionItemsData[0]; // Should be one item when editing
+            const originalReagent = reagentsCache.find(r => r.id === originalRecord.reagent_id);
+            const newReagentForEdit = editedItem.reagent;
+
+            // Calculate stock change
+            let stockDiff = editedItem.quantity - originalRecord.quantity;
+            
+            // If reagent changed during edit
+            if (originalRecord.reagent_id !== editedItem.reagentId) {
+                // 1. Add back to original reagent's stock
+                if (originalReagent) {
+                    const { error: stockRevertError } = await supabase.from('reagents')
+                        .update({ current_stock: originalReagent.current_stock + originalRecord.quantity })
+                        .eq('id', originalReagent.id);
+                    if (stockRevertError) { showAlert(`Error reverting stock for old reagent: ${stockRevertError.message}`, 'error'); hideLoading(); return; }
+                }
+                // 2. Deduct from new reagent's stock
+                if (newReagentForEdit.current_stock < editedItem.quantity) {
+                    showAlert(`Not enough stock for newly selected reagent ${newReagentForEdit.name}.`, 'error'); hideLoading(); return;
+                }
+                const { error: stockDeductError } = await supabase.from('reagents')
+                    .update({ current_stock: newReagentForEdit.current_stock - editedItem.quantity })
+                    .eq('id', newReagentForEdit.id);
+                 if (stockDeductError) { showAlert(`Error deducting stock for new reagent: ${stockDeductError.message}`, 'error'); hideLoading(); return; }
+
+            } else { // Reagent is the same, just quantity might have changed
+                 if (originalReagent) {
+                     const stockAfterEdit = originalReagent.current_stock - stockDiff;
+                     if (stockAfterEdit < 0) {
+                        showAlert(`Not enough stock for ${originalReagent.name} after edit. Requested change: ${stockDiff}, Available: ${originalReagent.current_stock}`, 'error');
+                        hideLoading(); return;
+                     }
+                     const { error: stockUpdateError } = await supabase.from('reagents')
+                        .update({ current_stock: stockAfterEdit })
+                        .eq('id', originalReagent.id);
+                     if (stockUpdateError) { showAlert(`Error updating stock: ${stockUpdateError.message}`, 'error'); hideLoading(); return; }
+                 }
+            }
+
+            // Update consumption record
+            const { error: consumptionUpdateError } = await supabase.from('consumption_log')
+                .update({
+                    date: consumptionDate,
+                    reagent_id: editedItem.reagentId,
+                    quantity: editedItem.quantity,
+                    unit: editedItem.unit,
+                    notes: editedItem.itemNotes,
+                    overall_notes: overallNotes,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', consumptionEditId);
+
+            if (consumptionUpdateError) {
+                showAlert(`Error updating consumption record: ${consumptionUpdateError.message}. Stock changes might need manual verification.`, 'error');
+            } else {
+                showAlert('Consumption record updated.', 'success');
+            }
+
+        } else { // Adding new consumption records (batch)
+            let allSuccessful = true;
+            for (const item of consumptionItemsData) {
+                // 1. Update reagent stock
+                const newStock = item.reagent.current_stock - item.quantity;
+                const { error: reagentUpdateError } = await supabase.from('reagents')
+                    .update({ current_stock: newStock, updated_at: new Date().toISOString() })
+                    .eq('id', item.reagentId);
+
+                if (reagentUpdateError) {
+                    showAlert(`Error updating stock for ${item.reagent.name}: ${reagentUpdateError.message}`, 'error');
+                    allSuccessful = false; continue; // Or break, depending on desired atomicity
+                }
+
+                // 2. Insert consumption log
+                const consumptionData = {
+                    reagent_id: item.reagentId,
+                    date: consumptionDate,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    notes: item.itemNotes, 
+                    overall_notes: overallNotes,
+                };
+                const { error: consumptionInsertError } = await supabase.from('consumption_log').insert(consumptionData);
+                if (consumptionInsertError) {
+                    showAlert(`Error logging consumption for ${item.reagent.name}: ${consumptionInsertError.message}`, 'error');
+                    // Consider rolling back stock update for this item or marking inconsistency
+                    allSuccessful = false;
+                }
+            }
+            if (allSuccessful) showAlert('Consumption(s) recorded successfully.', 'success');
+            else showAlert('Some consumptions recorded with errors. Please check logs and stock.', 'warning');
+        }
+        
+        await loadAllData();
+        updateDashboard();
+        closeAllModals();
+        hideLoading();
+    }
+    
+    function showDeleteConfirmation(id, type, permanent = false) { // id is DB UUID
+        deleteTarget = { id, type, permanent }; // ids for bulk still handled separately if needed
+        const modal = document.getElementById('delete-confirm-modal');
+        const messageEl = document.getElementById('delete-confirm-message');
+        const confirmBtn = document.getElementById('confirm-delete-btn');
+
+        let itemTypeDisplay = type.replace(/([A-Z])/g, ' $1').toLowerCase().replace('-restore','').replace('-bulk-soft-delete','');
+        
+        if (permanent) {
+            messageEl.textContent = `Are you sure you want to PERMANENTLY delete this ${itemTypeDisplay} record? This action cannot be undone.`;
+            confirmBtn.textContent = 'Permanently Delete';
+            confirmBtn.className = 'btn-danger';
+        } else if (type.endsWith('-restore')) {
+             messageEl.textContent = `Are you sure you want to restore this ${itemTypeDisplay} record?`;
+             confirmBtn.textContent = 'Restore';
+             confirmBtn.className = 'btn-accent';
+        }
+        else { // Soft delete (single or bulk)
+            const count = deleteTarget.ids ? deleteTarget.ids.length : 1;
+            const plural = count > 1 ? 's' : '';
+            messageEl.textContent = `Are you sure you want to delete ${count} ${itemTypeDisplay} record${plural}? ${type.includes('bulk') ? 'They' : 'It'} can be recovered later.`;
+            confirmBtn.textContent = type.includes('bulk') ? 'Soft Delete Selected' : 'Soft Delete';
+            confirmBtn.className = 'btn-warning';
+        }
+        openModal('delete-confirm-modal');
+    }
+
+    async function handleConfirmDelete() {
+        if ((!deleteTarget.id && (!deleteTarget.ids || deleteTarget.ids.length === 0)) || !deleteTarget.type) return;
+        showLoading();
+        
+        let success = true;
+        let message = "";
+
+        const itemsToProcess = deleteTarget.ids ? deleteTarget.ids : [deleteTarget.id];
+        const operationType = deleteTarget.type.replace('-bulk-soft-delete', '').replace('-restore', '');
+        const isRestore = deleteTarget.type.endsWith('-restore');
+        
+        for (const itemId of itemsToProcess) {
+            let itemCache, tableName;
+            let currentItem;
+
+            switch (operationType) {
+                case 'reagent': 
+                    itemCache = reagentsCache; tableName = 'reagents'; 
+                    currentItem = itemCache.find(i => i.id === itemId);
+                    break;
+                case 'consumption': 
+                    itemCache = consumptionCache; tableName = 'consumption_log'; 
+                    currentItem = itemCache.find(i => i.id === itemId);
+                    break;
+                case 'stockLog': 
+                    itemCache = stockLogCache; tableName = 'stock_receive_log'; 
+                    currentItem = itemCache.find(i => i.id === itemId);
+                    break;
+                default: 
+                    showAlert('Unknown item type for deletion.', 'error'); success = false; break;
+            }
+            if (!success || !currentItem) { success = false; break; }
+
+
+            if (deleteTarget.permanent) {
+                // Permanent delete from DB
+                const { error } = await supabase.from(tableName).delete().eq('id', itemId);
+                if (error) {
+                    message = `Error permanently deleting ${operationType} ${itemId}: ${error.message}`;
+                    success = false; break;
+                }
+                 // Note: If FKs are set to cascade, related records might be deleted too.
+                 // If set to SET NULL, reagent_id in logs will become NULL.
+            } else { // Soft delete or restore
+                const newDeletedState = !isRestore; // If restoring, newDeletedState is false
+                const updateData = {
+                    is_deleted: newDeletedState,
+                    deleted_at: newDeletedState ? new Date().toISOString() : null
+                };
+                 if (tableName !== 'stock_receive_log') { // stock_receive_log doesn't have updated_at in this schema
+                    updateData.updated_at = new Date().toISOString();
+                 }
+
+
+                // Stock adjustments (critical part)
+                let stockAdjustError = null;
+                if (operationType === 'consumption') {
+                    const reagent = reagentsCache.find(r => r.id === currentItem.reagent_id && !r.is_deleted); // Active reagent
+                    if (reagent) {
+                        const stockChange = isRestore ? -currentItem.quantity : currentItem.quantity; // Restore deducts, soft-delete adds back
+                        if (isRestore && reagent.current_stock < currentItem.quantity) {
+                             stockAdjustError = `Cannot restore consumption for ${reagent.name}. Stock insufficient.`;
+                        } else {
+                            const { error } = await supabase.from('reagents')
+                                .update({ current_stock: reagent.current_stock + stockChange })
+                                .eq('id', reagent.id);
+                            if (error) stockAdjustError = `Failed to adjust stock for ${reagent.name}: ${error.message}`;
+                        }
+                    } else if (isRestore) {
+                        stockAdjustError = `Cannot restore consumption. Reagent ${currentItem.reagent_id} not found or deleted.`;
+                    }
+                } else if (operationType === 'stockLog') {
+                    const reagent = reagentsCache.find(r => r.id === currentItem.reagent_id && !r.is_deleted);
+                    if (reagent) {
+                        const stockChange = isRestore ? currentItem.quantity_received : -currentItem.quantity_received; // Restore adds, soft-delete deducts
+                        if (!isRestore && reagent.current_stock < currentItem.quantity_received) {
+                            // If soft-deleting a stock log entry leads to negative stock, it's an issue.
+                            // Option: show warning, set stock to 0. Or prevent.
+                            showAlert(`Warning: Deleting stock log for ${reagent.name} would result in negative stock. Stock set to 0.`, 'warning');
+                            updateData.current_stock_after_delete = 0; // custom handling
+                            const { error } = await supabase.from('reagents')
+                                .update({ current_stock: 0 }).eq('id', reagent.id);
+                            if (error) stockAdjustError = `Failed to set stock to 0 for ${reagent.name}: ${error.message}`;
+
+                        } else {
+                             const { error } = await supabase.from('reagents')
+                                .update({ current_stock: reagent.current_stock + stockChange })
+                                .eq('id', reagent.id);
+                            if (error) stockAdjustError = `Failed to adjust stock for ${reagent.name}: ${error.message}`;
+                        }
+                    } else if (isRestore) {
+                         stockAdjustError = `Cannot restore stock log. Reagent ${currentItem.reagent_id} not found or deleted.`;
+                    }
+                }
+                
+                if (stockAdjustError) {
+                    message = stockAdjustError; success = false; break;
+                }
+
+                // Perform soft delete/restore in DB
+                const { error } = await supabase.from(tableName).update(updateData).eq('id', itemId);
+                if (error) {
+                    message = `Error updating ${operationType} ${itemId}: ${error.message}. Stock adjustments may be inconsistent.`;
+                    success = false; break;
+                }
+            }
+        } // end loop for itemsToProcess
+
+        if (success) {
+            const actionVerb = deleteTarget.permanent ? 'permanently deleted' : (isRestore ? 'restored' : 'soft deleted');
+            const count = itemsToProcess.length;
+            const itemTypeName = operationType.replace(/([A-Z])/g, ' $1').toLowerCase();
+            showAlert(`${count} ${itemTypeName}${count > 1 ? 's' : ''} ${actionVerb} successfully.`, 'success');
+        } else {
+            showAlert(message || 'An error occurred during the operation. Some items may not have been processed.', 'error');
+        }
+
+        await loadAllData();
+        updateDashboard();
+        closeAllModals();
+        deleteTarget = { id: null, ids: null, type: null, permanent: false };
+        hideLoading();
+    }
+    
+
+    // --- Table Population & Rendering (Mostly UI logic, column names from DB e.g., lot_number) ---
+    function getFilteredReagents() {
+        return reagentsCache.filter(r => showDeletedReagents ? true : !r.is_deleted);
+    }
+    function getFilteredConsumption() {
+        return consumptionCache.filter(c => showDeletedConsumption ? true : !c.is_deleted);
+    }
+    function getFilteredStockLogs() {
+        return stockLogCache.filter(sl => showDeletedStockLog ? true : !sl.is_deleted);
+    }
+
+    function populateReagentsTable(reagentsToDisplay = null) {
+        const tableBody = document.getElementById('reagents-table-body');
+        tableBody.innerHTML = '';
+        const reagents = reagentsToDisplay || getFilteredReagents().filter(filterReagentLogic);
+
+        const today = moment().startOf('day');
+        const thirtyDaysFromNow = moment().add(30, 'days').endOf('day');
+
+        if (reagents.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No reagents found.</td></tr>`;
+            return;
+        }
+        // Sorting is now done by Supabase query in loadAllData
+        // reagents.sort((a, b) => a.name.localeCompare(b.name)); 
+
+        reagents.forEach(reagent => {
+            const row = document.createElement('tr');
+            if (reagent.is_deleted) row.style.backgroundColor = '#ffebee';
+
+            let status = 'OK'; let statusClass = 'badge-success';
+            const expiryDate = moment(reagent.expiry_date);
+            if (expiryDate.isBefore(today)) { status = 'Expired'; statusClass = 'badge-danger'; }
+            else if (expiryDate.isBetween(today, thirtyDaysFromNow, null, '[]')) { status = 'Expiring Soon'; statusClass = 'badge-warning'; }
+            
+            row.innerHTML = `
+                <td><input type="checkbox" class="reagent-row-checkbox" data-id="${reagent.id}" ${reagent.is_deleted ? 'disabled' : ''}></td>
+                <td>${reagent.name} ${reagent.is_deleted ? '<span class="badge badge-danger">Deleted</span>': ''}</td>
+                <td>${reagent.lot_number || '-'}</td>
+                <td>${reagent.analyzer}</td>
+                <td>${reagent.current_stock}</td>
+                <td>${reagent.unit}</td>
+                <td>${formatDate(reagent.expiry_date)}</td>
+                <td><span class="badge ${statusClass}">${status}</span></td>
+                <td class="actions">
+                    ${reagent.is_deleted ? `
+                        <button class="btn-accent btn-restore" data-id="${reagent.id}">Restore</button>
+                        <button class="btn-danger btn-perm-delete" data-id="${reagent.id}">Delete Perm.</button>
+                    ` : `
+                        <button class="btn-secondary btn-edit" data-id="${reagent.id}">Edit</button>
+                        <button class="btn-warning btn-delete" data-id="${reagent.id}">Delete</button>
+                    `}
+                </td>
+            `;
+            if (reagent.is_deleted) {
+                row.querySelector('.btn-restore').addEventListener('click', () => showDeleteConfirmation(reagent.id, 'reagent-restore'));
+                row.querySelector('.btn-perm-delete').addEventListener('click', () => showDeleteConfirmation(reagent.id, 'reagent', true));
+            } else {
+                row.querySelector('.btn-edit').addEventListener('click', () => openReagentModal(reagent.id));
+                row.querySelector('.btn-delete').addEventListener('click', () => showDeleteConfirmation(reagent.id, 'reagent'));
+            }
+            tableBody.appendChild(row);
+        });
+        updateReagentBulkActionVisibility();
+    }
+    
+    function populateConsumptionTable(consumptionToDisplay = null) {
+        const tableBody = document.getElementById('consumption-table-body');
+        tableBody.innerHTML = '';
+        const consumptionData = consumptionToDisplay || getFilteredConsumption().filter(filterConsumptionLogic);
+
+        if (consumptionData.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No consumption records found.</td></tr>`;
+            return;
+        }
+        // Sorted by DB
+        // consumptionData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        consumptionData.forEach(record => {
+            const row = document.createElement('tr');
+            if (record.is_deleted) row.style.backgroundColor = '#ffebee';
+            const reagent = reagentsCache.find(r => r.id === record.reagent_id); // Find in cache (even if reagent itself is deleted)
+            
+            row.innerHTML = `
+                <td>${formatDate(record.date)} ${record.is_deleted ? '<span class="badge badge-danger">Deleted</span>': ''}</td>
+                <td>${reagent ? reagent.name : 'Unknown Reagent'}</td>
+                <td>${reagent ? (reagent.lot_number || '-') : '-'}</td>
+                <td>${record.quantity}</td>
+                <td>${record.unit}</td>
+                <td>${record.notes || record.overall_notes || '-'}</td>
+                <td class="actions">
+                     ${record.is_deleted ? `
+                        <button class="btn-accent btn-restore" data-id="${record.id}">Restore</button>
+                        <button class="btn-danger btn-perm-delete" data-id="${record.id}">Delete Perm.</button>
+                    ` : `
+                        <button class="btn-secondary btn-edit-consumption" data-id="${record.id}">Edit</button>
+                        <button class="btn-warning btn-delete-consumption" data-id="${record.id}">Delete</button>
+                    `}
+                </td>
+            `;
+             if (record.is_deleted) {
+                row.querySelector('.btn-restore').addEventListener('click', () => showDeleteConfirmation(record.id, 'consumption-restore'));
+                row.querySelector('.btn-perm-delete').addEventListener('click', () => showDeleteConfirmation(record.id, 'consumption', true));
+            } else {
+                row.querySelector('.btn-edit-consumption').addEventListener('click', () => openConsumptionModal(record.id));
+                row.querySelector('.btn-delete-consumption').addEventListener('click', () => showDeleteConfirmation(record.id, 'consumption'));
+            }
+            tableBody.appendChild(row);
+        });
+    }
+
+    function populateStockLogTable(logsToDisplay = null) {
+        const tableBody = document.getElementById('stock-log-table-body');
+        tableBody.innerHTML = '';
+        const logs = logsToDisplay || getFilteredStockLogs().filter(filterStockLogLogic);
+
+        if (logs.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No stock receive records found.</td></tr>`;
+            return;
+        }
+        // Sorted by DB
+        // logs.sort((a, b) => new Date(b.date_received) - new Date(a.date_received) || new Date(b.created_at) - new Date(a.created_at));
+
+        logs.forEach(log => {
+            const row = document.createElement('tr');
+             if (log.is_deleted) row.style.backgroundColor = '#ffebee';
+            row.innerHTML = `
+                <td>${formatDate(log.date_received)} ${log.is_deleted ? '<span class="badge badge-danger">Deleted</span>': ''}</td>
+                <td>${log.reagent_name || 'N/A'}</td> <!-- Denormalized field from DB -->
+                <td>${log.lot_number || 'N/A'}</td> <!-- Denormalized field from DB -->
+                <td>${log.quantity_received}</td>
+                <td>${log.unit}</td>
+                <td>${log.notes || '-'}</td>
+                <td>${formatDate(log.created_at, 'YYYY-MM-DD HH:mm')}</td>
+                <td class="actions">
+                    ${log.is_deleted ? `
+                        <button class="btn-accent btn-restore" data-id="${log.id}">Restore</button>
+                        <button class="btn-danger btn-perm-delete" data-id="${log.id}">Delete Perm.</button>
+                    ` : `
+                        <button class="btn-warning btn-delete-stocklog" data-id="${log.id}">Delete</button>
+                    `}
+                </td>
+            `;
+             if (log.is_deleted) {
+                row.querySelector('.btn-restore').addEventListener('click', () => showDeleteConfirmation(log.id, 'stockLog-restore'));
+                row.querySelector('.btn-perm-delete').addEventListener('click', () => showDeleteConfirmation(log.id, 'stockLog', true));
+            } else {
+                row.querySelector('.btn-delete-stocklog').addEventListener('click', () => showDeleteConfirmation(log.id, 'stockLog'));
+            }
+            tableBody.appendChild(row);
+        });
+    }
+    
+    function updateDashboard() { // Uses reagentsCache
+        const activeReagents = reagentsCache.filter(r => !r.is_deleted);
+        const today = moment().startOf('day');
+        const thirtyDaysFromNow = moment().add(30, 'days').endOf('day');
+
+        document.getElementById('total-reagents-val').textContent = activeReagents.length;
+        document.getElementById('expiring-soon-val').textContent = activeReagents.filter(r => {
+            const expiryDate = moment(r.expiry_date);
+            return expiryDate.isBetween(today, thirtyDaysFromNow, null, '[]');
+        }).length;
+        document.getElementById('expired-val').textContent = activeReagents.filter(r => moment(r.expiry_date).isBefore(today)).length;
+    }
+
+    function populateAnalyzerFilter() {
+        const select = document.getElementById('filter-analyzer');
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">All Analyzers</option>';
+        const analyzers = [...new Set(reagentsCache.filter(r => !r.is_deleted).map(r => r.analyzer))].sort();
+        analyzers.forEach(a => select.add(new Option(a, a)));
+        select.value = currentVal;
+    }
+    function populateConsumptionReagentFilter() { 
+        const select = document.getElementById('consumption-filter-reagent');
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">All Reagents</option>';
+        reagentsCache.sort((a,b) => a.name.localeCompare(b.name)).forEach(r => {
+             select.add(new Option(`${r.name} (Lot: ${r.lot_number || 'N/A'}) ${r.is_deleted ? '[DELETED]' : ''}`, r.id));
+        });
+        select.value = currentVal;
+    }
+    function populateStockLogReagentFilter() {
+        const select = document.getElementById('stocklog-filter-reagent');
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">All Reagents</option>';
+        reagentsCache.sort((a,b) => a.name.localeCompare(b.name)).forEach(r => {
+             select.add(new Option(`${r.name} (Lot: ${r.lot_number || 'N/A'}) ${r.is_deleted ? '[DELETED]' : ''}`, r.id));
+        });
+        select.value = currentVal;
+    }
+
+    // --- Filtering Logic (client-side, applied to cached data after fetch) ---
+    // These functions (filterReagentLogic, applyReagentFilters, etc.) remain largely the same.
+    // They operate on the `*Cache` arrays.
+    function filterReagentLogic(reagent) {
+        const nameFilter = document.getElementById('filter-name').value.toLowerCase();
+        const lotFilter = document.getElementById('filter-lot').value.toLowerCase();
+        const analyzerFilter = document.getElementById('filter-analyzer').value;
+        const statusFilter = document.getElementById('filter-status').value;
+        const expiryStartFilter = document.getElementById('filter-expiry-start').value;
+        const expiryEndFilter = document.getElementById('filter-expiry-end').value;
+
+        if (nameFilter && !reagent.name.toLowerCase().includes(nameFilter)) return false;
+        if (lotFilter && !(reagent.lot_number || '').toLowerCase().includes(lotFilter)) return false;
+        if (analyzerFilter && reagent.analyzer !== analyzerFilter) return false;
+        
+        const today = moment().startOf('day');
+        const thirtyDaysFromNow = moment().add(30, 'days').endOf('day');
+        const expiryDate = moment(reagent.expiry_date);
+
+        if (statusFilter) {
+            if (statusFilter === 'expired' && !expiryDate.isBefore(today)) return false;
+            if (statusFilter === 'expiring' && !expiryDate.isBetween(today, thirtyDaysFromNow, null, '[]')) return false;
+            if (statusFilter === 'ok' && (expiryDate.isBefore(today) || expiryDate.isBetween(today, thirtyDaysFromNow, null, '[]'))) return false;
+        }
+        if (expiryStartFilter && !expiryDate.isSameOrAfter(expiryStartFilter)) return false;
+        if (expiryEndFilter && !expiryDate.isSameOrBefore(expiryEndFilter)) return false;
+        
+        return true;
+    }
+    function applyReagentFilters() { populateReagentsTable(); }
+    function clearReagentFilters() {
+        document.getElementById('filter-name').value = '';
+        document.getElementById('filter-lot').value = '';
+        document.getElementById('filter-analyzer').value = '';
+        document.getElementById('filter-status').value = '';
+        document.getElementById('filter-expiry-start').value = '';
+        document.getElementById('filter-expiry-end').value = '';
+        populateReagentsTable();
+    }
+
+    function filterConsumptionLogic(record) {
+        const startDate = document.getElementById('consumption-filter-start').value;
+        const endDate = document.getElementById('consumption-filter-end').value;
+        const reagentIdFilter = document.getElementById('consumption-filter-reagent').value;
+        const notesFilter = document.getElementById('consumption-filter-notes').value.toLowerCase();
+
+        if (startDate && record.date < startDate) return false;
+        if (endDate && record.date > endDate) return false;
+        if (reagentIdFilter && record.reagent_id !== reagentIdFilter) return false;
+        const combinedNotes = `${record.notes || ''} ${record.overall_notes || ''}`.toLowerCase();
+        if (notesFilter && !combinedNotes.includes(notesFilter)) return false;
+        return true;
+    }
+    function applyConsumptionFilters() { populateConsumptionTable(); }
+    function clearConsumptionFilters() {
+        document.getElementById('consumption-filter-start').value = '';
+        document.getElementById('consumption-filter-end').value = '';
+        document.getElementById('consumption-filter-reagent').value = '';
+        document.getElementById('consumption-filter-notes').value = '';
+        populateConsumptionTable();
+    }
+
+    function filterStockLogLogic(log) {
+        const startDate = document.getElementById('stocklog-filter-start').value;
+        const endDate = document.getElementById('stocklog-filter-end').value;
+        const reagentIdFilter = document.getElementById('stocklog-filter-reagent').value;
+
+        if (startDate && log.date_received < startDate) return false;
+        if (endDate && log.date_received > endDate) return false;
+        if (reagentIdFilter && log.reagent_id !== reagentIdFilter) return false;
+        return true;
+    }
+    function applyStockLogFilters() { populateStockLogTable(); }
+    function clearStockLogFilters() {
+        document.getElementById('stocklog-filter-start').value = '';
+        document.getElementById('stocklog-filter-end').value = '';
+        document.getElementById('stocklog-filter-reagent').value = '';
+        populateStockLogTable();
+    }
+
+    // --- Bulk Actions ---
+    function handleSelectAllReagentsChange(event) {
+        const checkboxes = document.querySelectorAll('.reagent-row-checkbox:not([disabled])');
+        checkboxes.forEach(checkbox => checkbox.checked = event.target.checked);
+        updateReagentBulkActionVisibility();
+    }
+    
+    function updateReagentBulkActionVisibility() {
+        const anyChecked = Array.from(document.querySelectorAll('.reagent-row-checkbox')).some(cb => cb.checked);
+        document.getElementById('reagent-bulk-actions-container').classList.toggle('hidden', !anyChecked);
+        document.querySelectorAll('.reagent-row-checkbox').forEach(cb => {
+            cb.removeEventListener('change', updateReagentBulkActionVisibility); 
+            cb.addEventListener('change', updateReagentBulkActionVisibility);
+        });
+    }
+
+    async function handleReagentBulkAction() { // Now async because it calls showDeleteConfirmation -> handleConfirmDelete (async)
+        const action = document.getElementById('reagent-bulk-action-select').value;
+        const selectedIds = Array.from(document.querySelectorAll('.reagent-row-checkbox:checked')).map(cb => cb.dataset.id);
+
+        if (!action || selectedIds.length === 0) {
+            showAlert('Please select an action and at least one reagent.', 'warning');
+            return;
+        }
+
+        if (action === 'soft-delete') {
+            deleteTarget = { ids: selectedIds, type: 'reagent-bulk-soft-delete', permanent: false };
+            showDeleteConfirmation(null, 'reagent-bulk-soft-delete', false); // Pass null for single ID
+        }
+    }
+
+    // --- Reporting (Excel/JPG export logic should remain the same, as it operates on cached data) ---
+    // (Keep exportToExcel, exportToJPG, getReportData, generateStockReport,
+    // generateConsumptionReport, generateExpiryReport as they are)
+    function exportToExcel(data, filename) {
+        try {
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+            XLSX.writeFile(workbook, `${filename}_${formatDate(new Date())}.xlsx`);
+            showAlert('Report exported to Excel');
+        } catch (error) {
+            console.error("Excel export error:", error);
+            showAlert('Failed to export to Excel.', 'error');
+        }
+    }
+
+    async function exportToJPG(elementOrData, filename, reportType) {
+        showLoading();
+        try {
+            let elementToCapture;
+            let tempTableCreated = false;
+            const renderAreaId = `${reportType}-report-render-area`; 
+            const renderArea = document.getElementById(renderAreaId);
+
+            if (typeof elementOrData === 'string') { 
+                elementToCapture = document.getElementById(elementOrData);
+            } else { 
+                if (!renderArea) {
+                    showAlert('Render area for JPG report not found.', 'error'); hideLoading(); return;
+                }
+                renderArea.innerHTML = ''; 
+                const tempTable = document.createElement('table');
+                tempTable.style.borderCollapse = "collapse";
+                tempTable.style.width = "100%";
+                const a_thead = tempTable.createTHead();
+                const headerRow = a_thead.insertRow();
+                Object.keys(elementOrData[0] || {}).forEach(key => {
+                    const th = document.createElement('th');
+                    th.textContent = key;
+                    th.style.border = "1px solid #ddd"; th.style.padding = "8px"; th.style.backgroundColor = "#f0f0f0";
+                    headerRow.appendChild(th);
+                });
+                const a_tbody = tempTable.createTBody();
+                elementOrData.forEach(rowData => {
+                    const row = a_tbody.insertRow();
+                    Object.values(rowData).forEach(value => {
+                        const cell = row.insertCell();
+                        cell.textContent = value;
+                        cell.style.border = "1px solid #ddd"; cell.style.padding = "8px";
+                    });
+                });
+                renderArea.appendChild(tempTable);
+                elementToCapture = tempTable;
+                renderArea.classList.remove('hidden'); 
+                tempTableCreated = true;
+            }
+
+            if (!elementToCapture) {
+                showAlert('Element to capture for JPG not found.', 'error'); hideLoading(); return;
+            }
+            
+            const canvas = await html2canvas(elementToCapture, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `${filename}_${formatDate(new Date())}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showAlert('Report exported to JPG');
+
+            if (tempTableCreated && renderArea) {
+                renderArea.innerHTML = ''; 
+                renderArea.classList.add('hidden');
+            }
+
+        } catch (err) {
+            console.error('Error exporting to JPG:', err);
+            showAlert('Failed to export to JPG. Check console for details.', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    function getReportData(dataSource, fieldsMap) {
+        return dataSource.map(item => {
+            const row = {};
+            for (const header in fieldsMap) {
+                let val = item[fieldsMap[header]];
+                if (fieldsMap[header].toLowerCase().includes('date')) {
+                     val = formatDate(val); 
+                }
+                if (val === undefined || val === null) val = ''; 
+                row[header] = val;
+            }
+            return row;
+        });
+    }
+
+    function generateStockReport(isJpg = false) {
+        const activeReagents = reagentsCache.filter(r => !r.is_deleted);
+        const today = moment().startOf('day');
+        const thirtyDaysFromNow = moment().add(30, 'days').endOf('day');
+
+        const data = activeReagents.map(reagent => {
+            let status = 'OK';
+            const expiryDate = moment(reagent.expiry_date);
+            if (expiryDate.isBefore(today)) status = 'Expired';
+            else if (expiryDate.isBetween(today, thirtyDaysFromNow, null, '[]')) status = 'Expiring Soon';
+            
+            return { // Using DB column names (e.g. lot_number)
+                'Reagent Name': reagent.name,
+                'Lot Number': reagent.lot_number || '',
+                'Analyzer': reagent.analyzer,
+                'Current Stock': reagent.current_stock,
+                'Unit': reagent.unit,
+                'Expiry Date': formatDate(reagent.expiry_date),
+                'Storage Conditions': reagent.storage_conditions || '',
+                'Status': status,
+                'Notes': reagent.notes || ''
+            };
+        });
+        if (isJpg) exportToJPG(data, 'Reagent_Stock_Report', 'stock');
+        else exportToExcel(data, 'Reagent_Stock_Report');
+    }
+    
+    function generateConsumptionReport(isJpg = false) {
+        const startDate = document.getElementById('report-consumption-start-date').value;
+        const endDate = document.getElementById('report-consumption-end-date').value;
+        
+        let filteredConsumption = consumptionCache.filter(c => !c.is_deleted);
+        if (startDate) filteredConsumption = filteredConsumption.filter(c => c.date >= startDate);
+        if (endDate) filteredConsumption = filteredConsumption.filter(c => c.date <= endDate);
+
+        const data = filteredConsumption.map(record => {
+            const reagent = reagentsCache.find(r => r.id === record.reagent_id); 
+            return {
+                'Date': formatDate(record.date),
+                'Reagent Name': reagent ? reagent.name : 'Unknown',
+                'Lot #': reagent ? (reagent.lot_number || '-') : '-',
+                'Quantity': record.quantity,
+                'Unit': record.unit,
+                'Notes': record.notes || record.overall_notes || ''
+            };
+        });
+        if (isJpg) exportToJPG(data, 'Consumption_History_Report', 'consumption');
+        else exportToExcel(data, 'Consumption_History_Report');
+    }
+        
+    function generateExpiryReport(isJpg = false) {
+        const period = document.getElementById('expiry-period').value;
+        const today = moment().startOf('day');
+        let targetExpiryDate = null;
+
+        if (period !== 'all') {
+            targetExpiryDate = moment().add(parseInt(period), 'days').endOf('day');
+        }
+
+        const expiringReagents = reagentsCache.filter(reagent => {
+            if (reagent.is_deleted) return false;
+            const expiryDate = moment(reagent.expiry_date);
+            if (expiryDate.isBefore(today)) return false; 
+            if (targetExpiryDate) return expiryDate.isSameOrBefore(targetExpiryDate);
+            return true; 
+        });
+
+        const data = expiringReagents.map(reagent => ({
+            'Reagent Name': reagent.name,
+            'Lot Number': reagent.lot_number || '',
+            'Analyzer': reagent.analyzer,
+            'Current Stock': reagent.current_stock,
+            'Unit': reagent.unit,
+            'Expiry Date': formatDate(reagent.expiry_date)
+        }));
+        if (isJpg) exportToJPG(data, `Expiry_Report_${period}_days`, 'expiry');
+        else exportToExcel(data, `Expiry_Report_${period}_days`);
+    }
+    // --- END OF SCRIPT ---
+    </script>
+</body>
+</html>
