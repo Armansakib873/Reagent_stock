@@ -26,8 +26,8 @@
         
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f9f9f9; color: var(--text-color); }
-        .container { max-width: 1300px; margin: 0 auto; padding: 20px; }
-        header { background-color: var(--primary-color); color: white; padding: 20px 0; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        .container { max-width: 1300px; margin: 0 auto; padding: 10px; }
+        header { background-color: var(--primary-color); color: white; padding: 2px 0; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
         .header-content { display: flex; justify-content: space-between; align-items: center; }
         .logo { font-size: 24px; font-weight: bold; }
         .logo span { color: var(--accent-color); }
@@ -308,19 +308,34 @@
                     <div class="col"><div class="form-group"><label for="reagent-name">Reagent Name*</label><input type="text" id="reagent-name" required></div></div>
                     <div class="col"><div class="form-group"><label for="reagent-lot-number">Lot Number</label><input type="text" id="reagent-lot-number"></div></div>
                 </div>
-                <div class="row">
-                    <div class="col"><div class="form-group"><label for="analyzer">Analyzer*</label>
-                        <select id="analyzer" required>
-                            <option value="">Select Analyzer</option>
-                            <option value="Dimension">Dimension</option>
-                            <option value="Vitrous CHM">Vitrous CHM</option>
-                            <option value="Vitrous IMMU">Vitrous IMMU</option>
-                            <option value="Advia CP">Advia CP</option>
-                            <option value="Sysmex">Sysmex</option>
-                            <option value="Biorad">Biorad</option>
-                            <option value="Other">Other</option></select></div></div>
-                    <div class="col"><div class="form-group"><label for="reagent-description">Description</label><input type="text" id="reagent-description"></div></div>
-                </div>
+              <div class="row">
+    <div class="col">
+        <div class="form-group">
+            <label for="analyzer">Analyzer*</label>
+            <select id="analyzer" required>
+                <option value="">Select Analyzer</option>
+                <option value="Dimension">Dimension</option>
+                <option value="Vitrous CHM">Vitrous CHM</option>
+                <option value="Vitrous IMMU">Vitrous IMMU</option>
+                <option value="Advia CP">Advia CP</option>
+                <option value="Sysmex">Sysmex</option>
+                <option value="Biorad">Biorad</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <!-- Example buttons to trigger add/delete -->
+         <div class="analyzers" style="display: flex; gap: 10px; margin-top: 10px;">
+        <button type="button" id="trigger-add-analyzer-option">Add New Analyzer</button>
+        <button type="button" id="trigger-delete-analyzer-option">Delete Selected Analyzer</button>
+        </div>
+    </div>
+    <div class="col">
+        <div class="form-group">
+            <label for="reagent-description">Description</label>
+            <input type="text" id="reagent-description">
+        </div>
+    </div>
+</div>
                 <div class="row">
                     <div class="col"><div class="form-group"><label for="current-stock">Initial Stock*</label><input type="number" id="current-stock" min="0" step="0.01" required></div></div>
                     <div class="col"><div class="form-group"><label for="unit">Unit*</label><select id="unit" required><option value="">Select Unit</option><option value="mL">mL</option><option value="L">L</option><option value="g">g</option><option value="kg">kg</option><option value="Tests">Tests</option><option value="Kits">Kits</option><option value="Boxes">Boxes</option><option value="Units">Units</option></select></div></div>
@@ -1658,6 +1673,120 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (isJpg) exportToJPG(data, `Expiry_Report_${period}_days`, 'expiry');
         else exportToExcel(data, `Expiry_Report_${period}_days`);
     }
+
+
+
+
+    // --- DOM Elements ---
+const analyzerSelect = document.getElementById('analyzer');
+const triggerAddAnalyzerBtn = document.getElementById('trigger-add-analyzer-option');
+const triggerDeleteAnalyzerBtn = document.getElementById('trigger-delete-analyzer-option');
+
+// --- Functions to Manipulate Analyzer Dropdown ---
+
+/**
+ * Adds a new option to the analyzer dropdown.
+ * @param {string} optionValue - The value for the new option.
+ * @param {string} optionText - The display text for the new option.
+ * @param {boolean} selectAfterAdd - Whether to select the new option after adding it.
+ */
+function addAnalyzerOption(optionValue, optionText, selectAfterAdd = false) {
+    if (!analyzerSelect) {
+        console.error("Analyzer select dropdown not found!");
+        return;
+    }
+    if (!optionValue || !optionText) {
+        console.warn("Cannot add option: value and text are required.");
+        return;
+    }
+
+    // Check if option value already exists (case-insensitive for robustness)
+    let exists = false;
+    for (let i = 0; i < analyzerSelect.options.length; i++) {
+        if (analyzerSelect.options[i].value.toLowerCase() === optionValue.toLowerCase()) {
+            exists = true;
+            break;
+        }
+    }
+
+    if (exists) {
+        alert(`Analyzer option "${optionText}" (or value "${optionValue}") already exists.`);
+        // Optionally, select the existing one:
+        // analyzerSelect.value = Array.from(analyzerSelect.options).find(opt => opt.value.toLowerCase() === optionValue.toLowerCase()).value;
+        return;
+    }
+
+    const newOption = document.createElement('option');
+    newOption.value = optionValue;
+    newOption.text = optionText;
+    analyzerSelect.add(newOption);
+
+    if (selectAfterAdd) {
+        analyzerSelect.value = optionValue;
+    }
+    console.log(`Added analyzer option: ${optionText} (Value: ${optionValue})`);
+}
+
+/**
+ * Deletes the currently selected option from the analyzer dropdown.
+ * Does not delete the "Select Analyzer" (empty value) option.
+ */
+function deleteSelectedAnalyzerOption() {
+    if (!analyzerSelect) {
+        console.error("Analyzer select dropdown not found!");
+        return;
+    }
+
+    const selectedIndex = analyzerSelect.selectedIndex;
+    if (selectedIndex === -1 || analyzerSelect.options[selectedIndex].value === "") {
+        alert("Please select a specific analyzer option to delete.");
+        return;
+    }
+
+    const optionToRemove = analyzerSelect.options[selectedIndex];
+    const confirmDelete = confirm(`Are you sure you want to delete the analyzer option: "${optionToRemove.text}"?`);
+
+    if (confirmDelete) {
+        analyzerSelect.remove(selectedIndex);
+        console.log(`Deleted analyzer option: ${optionToRemove.text} (Value: ${optionToRemove.value})`);
+        analyzerSelect.selectedIndex = 0; // Reset to "Select Analyzer"
+    }
+}
+
+// --- Event Listeners (Example Triggers) ---
+if (triggerAddAnalyzerBtn) {
+    triggerAddAnalyzerBtn.addEventListener('click', () => {
+        const newAnalyzerName = prompt("Enter the name for the new analyzer option:");
+        if (newAnalyzerName && newAnalyzerName.trim() !== "") {
+            // For simplicity, using the same name for value and text.
+            // You might want different logic for value vs. text if needed.
+            addAnalyzerOption(newAnalyzerName.trim(), newAnalyzerName.trim(), true);
+        }
+    });
+}
+
+if (triggerDeleteAnalyzerBtn) {
+    triggerDeleteAnalyzerBtn.addEventListener('click', deleteSelectedAnalyzerOption);
+}
+
+// --- Optional: Function to populate dropdown on load (if you want to clear and set specific options) ---
+function initializeAnalyzerDropdown(optionsArray) {
+    if (!analyzerSelect) return;
+    analyzerSelect.innerHTML = '<option value="">Select Analyzer</option>'; // Clear existing except the placeholder
+    optionsArray.forEach(opt => {
+        addAnalyzerOption(opt.value, opt.text);
+    });
+}
+
+// Example usage of initializeAnalyzerDropdown (call this when your page/modal loads if needed)
+// document.addEventListener('DOMContentLoaded', () => {
+//     const initialAnalyzers = [
+//         { value: "Dimension", text: "Dimension" },
+//         { value: "Vitrous CHM", text: "Vitrous CHM" },
+//         { value: "Other", text: "Other Special Analyzer" }
+//     ];
+//     initializeAnalyzerDropdown(initialAnalyzers);
+// });
     // --- END OF SCRIPT ---
     </script>
 </body>
