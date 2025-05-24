@@ -635,14 +635,29 @@
         document.getElementById('report-consumption-end-date').valueAsDate = today;
     }
 
-    // --- Scanner Integration Functions ---
-    function initScannerControls() {
-        document.getElementById('reagent-scanner-start-btn').addEventListener('click', startReagentBarcodeScanner);
-        document.getElementById('reagent-scanner-upload-btn').addEventListener('click', () => {
-            document.getElementById('reagent-scanner-upload-input').click();
-        });
-        document.getElementById('reagent-scanner-upload-input').addEventListener('change', handleReagentBarcodeImageUpload);
+ // In your JavaScript:
+let reagentScannerUploadInput;
+
+function initScannerControls() {
+    reagentScannerUploadInput = document.getElementById('reagent-scanner-upload-input');
+
+    document.getElementById('reagent-scanner-start-btn').addEventListener('click', () => {
+        resetReagentScannerUI(); // <-- ADD THIS
+        startReagentBarcodeScanner();
+    });
+
+    document.getElementById('reagent-scanner-upload-btn').addEventListener('click', () => {
+        resetReagentScannerUI(); // <-- ADD THIS
+        if (reagentScannerUploadInput) {
+            // reagentScannerUploadInput.value = null; // resetReagentScannerUI now handles this
+            reagentScannerUploadInput.click();
+        }
+    });
+
+    if (reagentScannerUploadInput) {
+        reagentScannerUploadInput.addEventListener('change', handleReagentBarcodeImageUpload);
     }
+}
 
     async function startReagentBarcodeScanner() {
         const videoElement = document.getElementById('reagent-scanner-video');
@@ -696,34 +711,74 @@
         codeReader.reset(); // Important to release camera and reset reader
     }
 
-    async function handleReagentBarcodeImageUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+async function handleReagentBarcodeImageUpload(event) {
+    const file = event.target.files[0]; // event.target is the file input
+    if (!file) {
+        // If no file is selected (e.g., user cancels dialog), also ensure it's reset for next time
+        if (event.target) {
+            event.target.value = null;
+        }
+        return;
+    }
 
-        const previewElement = document.getElementById('reagent-scanner-preview');
-        const rawScanInput = document.getElementById('reagent-scanner-raw');
-        previewElement.src = URL.createObjectURL(file);
-        previewElement.style.display = 'block';
-        document.getElementById('reagent-scanner-video').style.display = 'none';
-        stopReagentBarcodeScanner(); // Ensure camera is off
-        rawScanInput.value = '';
+    const previewElement = document.getElementById('reagent-scanner-preview');
+    const rawScanInput = document.getElementById('reagent-scanner-raw');
+    previewElement.src = URL.createObjectURL(file);
+    previewElement.style.display = 'block';
+    document.getElementById('reagent-scanner-video').style.display = 'none';
+    stopReagentBarcodeScanner();
+    rawScanInput.value = '';
 
-        try {
-            const result = await codeReader.decodeFromImage(previewElement);
-            if (result) {
-                rawScanInput.value = result.getText();
-                parseReagentBarcode(result.getText());
-            }
-        } catch (err) {
-            console.error("Error decoding image:", err);
-            showAlert('Could not decode barcode from image. Try a clearer image.', 'error');
-            rawScanInput.value = 'Error decoding image.';
-        } finally {
-            // Clear the file input so the same file can be selected again if needed
+    try {
+        const result = await codeReader.decodeFromImage(previewElement);
+        if (result) {
+            rawScanInput.value = result.getText();
+            parseReagentBarcode(result.getText());
+        }
+    } catch (err) {
+        console.error("Error decoding image:", err);
+        showAlert('Could not decode barcode from image. Try a clearer image.', 'error');
+        rawScanInput.value = 'Error decoding image.';
+    } finally {
+        // Still good to have it here, especially if the 'change' event was triggered
+        // by a direct user interaction with a *visible* file input (though ours is hidden).
+        if (event.target) {
             event.target.value = null;
         }
     }
+}
 
+
+// Add this new function
+function resetReagentScannerUI() {
+    // Clear image preview
+    const previewElement = document.getElementById('reagent-scanner-preview');
+    previewElement.src = '#'; // Or some placeholder, or just hide
+    previewElement.style.display = 'none';
+
+    // Clear video (though stopReagentBarcodeScanner should handle this)
+    const videoElement = document.getElementById('reagent-scanner-video');
+    videoElement.style.display = 'none';
+    if (videoElement.srcObject) { // Ensure it's fully cleared if srcObject was set
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+        videoElement.srcObject = null;
+    }
+
+
+    // Clear raw scan input
+    document.getElementById('reagent-scanner-raw').value = '';
+
+    // Optionally, clear the lot and expiry fields if you want a full reset
+    // of scanned data when a new scan action is initiated.
+    // document.getElementById('reagent-lot-number').value = '';
+    // document.getElementById('expiry-date').value = '';
+    // showAlert('Scanner fields cleared for new input.', 'info', 2000); // Optional feedback
+
+    // Ensure the file input itself is ready for a new upload (if it was used)
+    if (reagentScannerUploadInput) {
+        reagentScannerUploadInput.value = null;
+    }
+}
     function parseReagentBarcode(data) {
         console.log("Raw barcode data for reagent modal:", data);
         let lotFound = null, expiryFound = null;
@@ -800,6 +855,7 @@
     function openReagentModal(reagentId = null) {
         const form = document.getElementById('reagent-form');
         form.reset();
+    resetReagentScannerUI(); // <-- ADD THIS for a clean scanner state on modal open
         document.getElementById('reagent-id').value = '';
         document.getElementById('reagent-modal-title').textContent = 'Register New Reagent';
         document.getElementById('reagent-scanner-raw').value = ''; // Clear raw scan input
