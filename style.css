@@ -146,7 +146,6 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            margin-bottom: 15px; 
             padding: 10px; 
            
         }
@@ -213,6 +212,19 @@
             cursor: not-allowed; 
             transform: none;
             box-shadow: none;
+        }
+
+        .scanbtn{
+            background: linear-gradient(135deg, #4f46e5, #4338ca) !important; 
+            color: white;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-secondary { 
@@ -694,14 +706,16 @@
         /* Scanner specific styles */
         .scanner-controls { 
             display: flex; 
+            flex-direction: row;
+
             gap: 15px; 
             margin-bottom: 15px; 
         }
 
         .scanner-controls button { 
-            padding: 10px 20px; 
+            padding: 5px 10px; 
             font-size: 14px; 
-            flex-grow: 1; 
+           
         }
 
         #reagent-scanner-video, #reagent-scanner-preview {

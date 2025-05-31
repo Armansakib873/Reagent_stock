@@ -213,25 +213,19 @@
             <input type="hidden" id="reagent-id">
 
             
-                <div class="form-group form-group-relative">
-                    <label for="reagent-search-name">Search Existing Reagent by Name/Lot or Select from Matches Below:</label>
-                    <input type="text" id="reagent-search-name" placeholder="Type reagent name or lot to search...">
-                    <div id="reagent-suggestions-dropdown" class="suggestions-dropdown hidden"></div>
-                </div>
+             
 
             <!-- STEP 1: Scan or Enter LOT -->
-            <h4>Enter/Scan Lot & Expiry</h4>
             <div class="form-group">
                 <div class="scanner-controls">
-                    <button type="button" id="reagent-scanner-start-btn" class="btn-secondary">Scan Camera</button>
-                    <button type="button" id="reagent-scanner-upload-btn" class="btn-secondary">Upload Image</button>
+                    <button type="button" id="reagent-scanner-start-btn" class="btn-secondary scanbtn">Scan Camera</button>
+                    <button type="button" id="reagent-scanner-upload-btn" class="btn-secondary scanbtn">Upload Image</button>
                 </div>
                 <input type="file" id="reagent-scanner-upload-input" accept="image/*">
                 <video id="reagent-scanner-video" playsinline></video>
                 <img id="reagent-scanner-preview">
             </div>
             <div class="form-group">
-                <label for="reagent-scanner-raw">Raw Scan Data (Editable)</label>
                 <div style="display:flex; gap:10px;">
                     <input type="text" id="reagent-scanner-raw" placeholder="Enter or paste raw barcode data here">
                     <button type="button" id="parse-raw-scan-data-btn" class="btn-info" style="flex-shrink: 0;">Parse</button>
@@ -239,6 +233,12 @@
             </div>
 
             <hr>
+
+               <div class="form-group form-group-relative">
+                    <label for="reagent-search-name">Search Existing Reagent by Name/Lot or Select from Matches Below:</label>
+                    <input type="text" id="reagent-search-name" placeholder="Type reagent name or lot to search...">
+                    <div id="reagent-suggestions-dropdown" class="suggestions-dropdown hidden"></div>
+                </div>
 
             <!-- STEP 2: Identify Matching Reagent -->
             <div id="identification-stage">
@@ -258,6 +258,34 @@
                     </div>
                 </div>
             </div>
+
+                <div class="row" style="margin-top: 15px;">
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="selected-reagent-name">Selected Reagent Name for Action</label>
+                            <input type="text" id="selected-reagent-name" readonly placeholder="Select/find existing or enter new below">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label for="modal-analyzer">Analyzer*</label>
+                            <select id="modal-analyzer" required>
+                                <option value="">Select Analyzer</option>
+                                <option value="Dimension">Dimension</option>
+                                <option value="Vitrous CHM">Vitrous CHM</option>
+                                <option value="Vitrous IMMU">Vitrous IMMU</option>
+                                <option value="Advia CP">Advia CP</option>
+                                <option value="Sysmex">Sysmex</option>
+                                <option value="Biorad">Biorad</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <div class="analyzers" style="display: flex; gap: 10px; margin-top: 5px;">
+                                <button type="button" id="trigger-add-analyzer-option" class="btn-secondary" style="font-size:12px; padding: 4px 8px;">Add New</button>
+                                <button type="button" id="trigger-delete-analyzer-option" class="btn-secondary" style="font-size:12px; padding: 4px 8px;">Del Selected</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
              <!-- Toggle Register New Section -->
             <button type="button" id="toggle-register-new-fields-btn" class="btn-info" style="margin-top:10px; width:100%;">+ Register as New Reagent (or modify details for new)</button>
@@ -315,33 +343,7 @@
 
 
                 <!-- Display when a reagent is selected or entered -->
-                <div class="row" style="margin-top: 15px;">
-                    <div class="col">
-                        <div class="form-group">
-                            <label for="selected-reagent-name">Selected Reagent Name for Action</label>
-                            <input type="text" id="selected-reagent-name" readonly placeholder="Select/find existing or enter new below">
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="form-group">
-                            <label for="modal-analyzer">Analyzer*</label>
-                            <select id="modal-analyzer" required>
-                                <option value="">Select Analyzer</option>
-                                <option value="Dimension">Dimension</option>
-                                <option value="Vitrous CHM">Vitrous CHM</option>
-                                <option value="Vitrous IMMU">Vitrous IMMU</option>
-                                <option value="Advia CP">Advia CP</option>
-                                <option value="Sysmex">Sysmex</option>
-                                <option value="Biorad">Biorad</option>
-                                <option value="Other">Other</option>
-                            </select>
-                            <div class="analyzers" style="display: flex; gap: 10px; margin-top: 5px;">
-                                <button type="button" id="trigger-add-analyzer-option" class="btn-secondary" style="font-size:12px; padding: 4px 8px;">Add New</button>
-                                <button type="button" id="trigger-delete-analyzer-option" class="btn-secondary" style="font-size:12px; padding: 4px 8px;">Del Selected</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            
             </div>
 
            
@@ -1962,97 +1964,118 @@ async function handleConsumptionFormSubmit(e) {
         }
         openModal('delete-confirm-modal');
     }
-    async function handleConfirmDelete() {
-        if ((!deleteTarget.id && (!deleteTarget.ids || deleteTarget.ids.length === 0)) || !deleteTarget.type) {
-            showAlert('No target selected for deletion.', 'info'); return;
-        }
-        showLoading();
-        let overallSuccess = true; let SerrorMessages = [];
-        const itemsToProcess = deleteTarget.ids ? deleteTarget.ids : [deleteTarget.id];
-        const operationBaseType = deleteTarget.type.replace('-bulk-soft-delete', '').replace('-restore', '');
-        const isRestore = deleteTarget.type.endsWith('-restore');
+  async function handleConfirmDelete() {
+    if ((!deleteTarget.id && (!deleteTarget.ids || deleteTarget.ids.length === 0)) || !deleteTarget.type) {
+        showAlert('No target selected for deletion.', 'info'); return;
+    }
+    showLoading();
+    let overallSuccess = true; let SerrorMessages = [];
+    const itemsToProcess = deleteTarget.ids ? deleteTarget.ids : [deleteTarget.id];
+    const operationBaseType = deleteTarget.type.replace('-bulk-soft-delete', '').replace('-restore', '');
+    const isRestore = deleteTarget.type.endsWith('-restore');
 
-        for (const itemId of itemsToProcess) {
-            let tableName, currentItem, reagentToUpdate;
-            try {
-                switch (operationBaseType) {
-                    case 'reagent': 
-                        tableName = 'reagents'; 
-                        currentItem = reagentsCache.find(i => i.id.toString() === itemId.toString()); 
-                        if (currentItem && currentItem.current_stock > 0 && !isRestore && !deleteTarget.permanent) {
-                           SerrorMessages.push(`Reagent "${currentItem.name}" (Lot: ${currentItem.lot_number}) has stock (${currentItem.current_stock} ${currentItem.unit}). Cannot soft delete directly. Consume stock first or use permanent delete if intended.`);
-                           overallSuccess = false; continue; // Skip this item
-                        }
-                        break;
-                    case 'consumption': 
-                        tableName = 'consumption_log'; 
-                        currentItem = consumptionCache.find(i => i.id.toString() === itemId.toString());
-                        if (currentItem) reagentToUpdate = reagentsCache.find(r => r.id.toString() === currentItem.reagent_id.toString() && !r.is_deleted);
-                        break;
-                    case 'stockLog': 
-                        tableName = 'stock_receive_log'; 
-                        currentItem = stockLogCache.find(i => i.id.toString() === itemId.toString());
-                        if (currentItem) reagentToUpdate = reagentsCache.find(r => r.id.toString() === currentItem.reagent_id.toString() && !r.is_deleted);
-                        break;
-                    default: 
-                        SerrorMessages.push('Unknown item type for deletion.'); overallSuccess = false; continue;
+    for (const itemId of itemsToProcess) {
+        let tableName, currentItem, reagentToUpdate;
+        try {
+            switch (operationBaseType) {
+                case 'reagent': 
+                    tableName = 'reagents'; 
+                    currentItem = reagentsCache.find(i => i.id.toString() === itemId.toString()); 
+                    // REMOVED THE STOCK CHECK BLOCK:
+                    // if (currentItem && currentItem.current_stock > 0 && !isRestore && !deleteTarget.permanent) {
+                    //    SerrorMessages.push(`Reagent "${currentItem.name}" (Lot: ${currentItem.lot_number}) has stock (${currentItem.current_stock} ${currentItem.unit}). Cannot soft delete directly. Consume stock first or use permanent delete if intended.`);
+                    //    overallSuccess = false; continue; // Skip this item
+                    // }
+                    break;
+                case 'consumption': 
+                    tableName = 'consumption_log'; 
+                    currentItem = consumptionCache.find(i => i.id.toString() === itemId.toString());
+                    if (currentItem) reagentToUpdate = reagentsCache.find(r => r.id.toString() === currentItem.reagent_id.toString() && !r.is_deleted);
+                    break;
+                case 'stockLog': 
+                    tableName = 'stock_receive_log'; 
+                    currentItem = stockLogCache.find(i => i.id.toString() === itemId.toString());
+                    if (currentItem) reagentToUpdate = reagentsCache.find(r => r.id.toString() === currentItem.reagent_id.toString() && !r.is_deleted);
+                    break;
+                default: 
+                    SerrorMessages.push('Unknown item type for deletion.'); overallSuccess = false; continue;
+            }
+
+            if (!currentItem) { SerrorMessages.push(`Item ID ${itemId} not found for type ${operationBaseType}.`); overallSuccess = false; continue; }
+
+            if (deleteTarget.permanent) {
+                // Permanent deletion logic for reagent:
+                // If you permanently delete a reagent, you might also want to:
+                // 1. Delete associated consumption_log entries.
+                // 2. Delete associated stock_receive_log entries.
+                // This is to maintain referential integrity if you have foreign key constraints
+                // or just to clean up orphaned records. This part is currently NOT implemented.
+                // For now, it just deletes the reagent record.
+                if (operationBaseType === 'reagent') {
+                     // Optional: Add confirmation for deleting associated logs if reagent is perm deleted
+                    if (!confirm(`Permanently deleting reagent "${currentItem.name}" (Lot: ${currentItem.lot_number}). This will NOT automatically delete its consumption or stock receive logs. Proceed?`)){
+                        SerrorMessages.push(`Permanent deletion of reagent "${currentItem.name}" cancelled by user.`);
+                        overallSuccess = false; continue;
+                    }
                 }
 
-                if (!currentItem) { SerrorMessages.push(`Item ID ${itemId} not found for type ${operationBaseType}.`); overallSuccess = false; continue; }
-
-                if (deleteTarget.permanent) {
-                    const { error } = await supabase.from(tableName).delete().eq('id', itemId);
-                    if (error) { SerrorMessages.push(`Error permanently deleting ${currentItem.name || `ID ${itemId}`}: ${error.message}`); overallSuccess = false; }
-                } else { // Soft delete / restore
-                    const newDeletedState = !isRestore;
-                    const updateData = { is_deleted: newDeletedState, deleted_at: newDeletedState ? new Date().toISOString() : null };
-                    if (tableName !== 'stock_receive_log') updateData.updated_at = new Date().toISOString(); // Stock log might not have updated_at
-                    
-                    // Handle stock adjustments
-                    let stockAdjustError = null;
-                    if (reagentToUpdate) { // For consumption and stockLog
+                const { error } = await supabase.from(tableName).delete().eq('id', itemId);
+                if (error) { SerrorMessages.push(`Error permanently deleting ${currentItem.name || `ID ${itemId}`}: ${error.message}`); overallSuccess = false; }
+            
+            } else { // Soft delete / restore
+                const newDeletedState = !isRestore;
+                const updateData = { is_deleted: newDeletedState, deleted_at: newDeletedState ? new Date().toISOString() : null };
+                // Only add updated_at if the table has it (stock_receive_log might not)
+                if (tableName === 'reagents' || tableName === 'consumption_log') {
+                    updateData.updated_at = new Date().toISOString();
+                }
+                
+                // Stock adjustments for consumption and stockLog (this part remains important)
+                let stockAdjustError = null;
+                if (operationBaseType === 'consumption' || operationBaseType === 'stockLog') {
+                    if (reagentToUpdate) { 
                         let stockChange = 0;
                         if (operationBaseType === 'consumption') stockChange = isRestore ? -currentItem.quantity : currentItem.quantity;
                         else if (operationBaseType === 'stockLog') stockChange = isRestore ? currentItem.quantity_received : -currentItem.quantity_received;
 
                         const newReagentStock = parseFloat(reagentToUpdate.current_stock) + stockChange;
-                        if (newReagentStock < 0 && !isRestore) { // If deleting (consumption or stockLog) would make stock negative
-                             showAlert(`Warning: Operation on ${reagentToUpdate.name} (Lot: ${reagentToUpdate.lot_number}) would result in negative stock. Stock will be set to 0.`, 'warning', 5000);
+                        if (newReagentStock < 0 && !isRestore) { 
+                             showAlert(`Warning: Operation on ${reagentToUpdate.name} (Lot: ${reagentToUpdate.lot_number}) related to ${operationBaseType} log would result in negative stock for the reagent. Reagent stock will be set to 0.`, 'warning', 6000);
                              const { error: stockErr } = await supabase.from('reagents').update({ current_stock: 0 }).eq('id', reagentToUpdate.id);
                              if (stockErr) stockAdjustError = `Failed to set stock to 0 for ${reagentToUpdate.name}: ${stockErr.message}`;
                         } else {
                             const { error: stockErr } = await supabase.from('reagents').update({ current_stock: newReagentStock }).eq('id', reagentToUpdate.id);
                             if (stockErr) stockAdjustError = `Failed to adjust stock for ${reagentToUpdate.name}: ${stockErr.message}`;
                         }
-                    } else if (isRestore && (operationBaseType === 'consumption' || operationBaseType === 'stockLog')) {
-                        stockAdjustError = `Cannot restore ${currentItem.reagent_name || `item ID ${itemId}`}: Associated reagent not found or is deleted. Record will be marked restored, but stock not adjusted.`;
+                    } else if (isRestore) { // If restoring a log but the parent reagent is gone/deleted
+                        stockAdjustError = `Cannot automatically adjust stock for ${currentItem.reagent_name || `item ID ${itemId}`}: Associated reagent not found or is deleted. Log record will be marked restored, but stock needs manual review.`;
                     }
-                    if (stockAdjustError) { SerrorMessages.push(stockAdjustError); overallSuccess = false; /* continue; // Decide if to proceed with marking as deleted/restored despite stock error */ }
-                    
-                    // Proceed with marking the log item as deleted/restored
-                    const { error } = await supabase.from(tableName).update(updateData).eq('id', itemId);
-                    if (error) { SerrorMessages.push(`Error updating record ${currentItem.name || `ID ${itemId}`}: ${error.message}. Stock might be inconsistent.`); overallSuccess = false; }
                 }
-            } catch (err) {
-                SerrorMessages.push(`Unexpected error processing item ID ${itemId}: ${err.message}`);
-                overallSuccess = false;
+                if (stockAdjustError) { SerrorMessages.push(stockAdjustError); overallSuccess = false; /* Decide if to proceed with log item's is_deleted state update */ }
+                
+                // Proceed with marking the item itself as deleted/restored
+                const { error } = await supabase.from(tableName).update(updateData).eq('id', itemId);
+                if (error) { SerrorMessages.push(`Error updating record ${currentItem.name || `ID ${itemId}`}: ${error.message}.`); overallSuccess = false; }
             }
-        } // end for loop
-
-        if (SerrorMessages.length > 0) {
-            showAlert(`Operation completed with errors: ${SerrorMessages.join('; ')}`, 'error', 10000);
-        } else if (overallSuccess) {
-             showAlert(`${itemsToProcess.length} item(s) ${deleteTarget.permanent ? 'permanently deleted' : (isRestore ? 'restored' : 'soft deleted')} successfully.`, 'success');
-        } else {
-             showAlert('Operation partially failed. Check messages and console.', 'warning', 7000);
+        } catch (err) {
+            SerrorMessages.push(`Unexpected error processing item ID ${itemId} (${operationBaseType}): ${err.message}`);
+            overallSuccess = false;
         }
-        
-        await loadAllData(); 
-        closeAllModals();
-        deleteTarget = { id: null, ids: null, type: null, permanent: false }; // Reset
-        hideLoading();
-    }
+    } // end for loop
 
+    if (SerrorMessages.length > 0) {
+        showAlert(`Operation completed with ${SerrorMessages.length > 1 ? 'errors' : 'an error'}: ${SerrorMessages.join('; ')}`, 'error', 10000);
+    } else if (overallSuccess) {
+         showAlert(`${itemsToProcess.length} item(s) ${deleteTarget.permanent ? 'permanently deleted' : (isRestore ? 'restored' : 'soft deleted')} successfully.`, 'success');
+    } else { // Should not happen if SerrorMessages is empty but overallSuccess is false, but as a fallback
+         showAlert('Operation partially failed or had unexpected issues. Check messages and console.', 'warning', 7000);
+    }
+    
+    await loadAllData(); 
+    closeAllModals();
+    deleteTarget = { id: null, ids: null, type: null, permanent: false }; 
+    hideLoading();
+}
 
     // --- Table Population & Rendering ---
     function getFilteredReagents() { return reagentsCache.filter(r => showDeletedReagents ? true : !r.is_deleted); }
