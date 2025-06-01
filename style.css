@@ -175,7 +175,7 @@
             font-size: 18px; 
             color: var(--primary-color); 
             margin: 25px 0 15px 0; 
-            border-bottom: 2px solid var(--primary-color); 
+            /* border-bottom: 2px solid var(--primary-color);  */
             padding-bottom: 8px;
             font-weight: 600;
         }
