@@ -744,23 +744,25 @@ function debounce(func, delay) {
     }
 
  function initMainEventListeners() {
+    console.log("initMainEventListeners: Function CALLED"); // 1. Confirms function starts
+
     // Dashboard card clicks
     const totalReagentsCard = document.getElementById('total-reagents-card');
     const expiringSoonCard = document.getElementById('expiring-soon-card');
     const expiredCard = document.getElementById('expired-card');
 
     if(totalReagentsCard) totalReagentsCard.addEventListener('click', () => {
-        clearReagentFilters(); 
+        clearReagentFilters();
         setActiveTab('inventory');
     });
     if(expiringSoonCard) expiringSoonCard.addEventListener('click', () => {
-        clearReagentFilters(false); 
+        clearReagentFilters(false);
         if(document.getElementById('filter-status')) document.getElementById('filter-status').value = 'expiring';
         applyReagentFilters();
         setActiveTab('inventory');
     });
     if(expiredCard) expiredCard.addEventListener('click', () => {
-        clearReagentFilters(false); 
+        clearReagentFilters(false);
         if(document.getElementById('filter-status')) document.getElementById('filter-status').value = 'expired';
         applyReagentFilters();
         setActiveTab('inventory');
@@ -772,16 +774,19 @@ function debounce(func, delay) {
     const applyReagentBulkActionBtn = document.getElementById('apply-reagent-bulk-action-btn');
     const toggleDeletedReagentsBtn = document.getElementById('toggle-deleted-reagents-btn');
 
-    if(clearFiltersBtn) clearFiltersBtn.addEventListener('click', () => clearReagentFilters()); // Reset button still useful
+    if(clearFiltersBtn) clearFiltersBtn.addEventListener('click', () => clearReagentFilters());
     if(selectAllReagentsCheckbox) selectAllReagentsCheckbox.addEventListener('change', handleSelectAllReagentsChange);
     if(applyReagentBulkActionBtn) applyReagentBulkActionBtn.addEventListener('click', handleReagentBulkAction);
-    if(toggleDeletedReagentsBtn) toggleDeletedReagentsBtn.addEventListener('click', () => {
-        showDeletedReagents = !showDeletedReagents;
-        toggleDeletedReagentsBtn.textContent = showDeletedReagents ? 'Hide Deleted' : 'Show Deleted';
-        populateReagentsTable(); // Apply current filters with new show/hide deleted state
-    });
+    if(toggleDeletedReagentsBtn) { // Check if the button itself exists
+        toggleDeletedReagentsBtn.addEventListener('click', () => {
+            showDeletedReagents = !showDeletedReagents;
+            // Update button text AND icon
+            toggleDeletedReagentsBtn.innerHTML = showDeletedReagents ? '<i class="fas fa-eye-slash" style="margin-right: 5px;"></i>Hide Deleted' : '<i class="fas fa-eye" style="margin-right: 5px;"></i>Show Deleted';
+            populateReagentsTable();
+        });
+    }
 
-    // Event listeners for live filtering on inventory tab
+
     const filterNameInput = document.getElementById('filter-name');
     const filterLotInput = document.getElementById('filter-lot');
     const filterAnalyzerSelect = document.getElementById('filter-analyzer');
@@ -789,18 +794,15 @@ function debounce(func, delay) {
     const filterExpiryStartInput = document.getElementById('filter-expiry-start');
     const filterExpiryEndInput = document.getElementById('filter-expiry-end');
 
-    // REMOVED: const applyFiltersBtn = document.getElementById('apply-filters-btn');
-    // REMOVED: if(applyFiltersBtn) applyFiltersBtn.addEventListener('click', applyReagentFilters);
-
-    if (filterNameInput) filterNameInput.addEventListener('input', debounce(applyReagentFilters, 350)); // Debounce text inputs
-    if (filterLotInput) filterLotInput.addEventListener('input', debounce(applyReagentFilters, 350));   // Debounce text inputs
-    if (filterAnalyzerSelect) filterAnalyzerSelect.addEventListener('change', applyReagentFilters);    // 'change' for select
-    if (filterStatusSelect) filterStatusSelect.addEventListener('change', applyReagentFilters);        // 'change' for select
-    if (filterExpiryStartInput) filterExpiryStartInput.addEventListener('change', applyReagentFilters); // 'change' for date
-    if (filterExpiryEndInput) filterExpiryEndInput.addEventListener('change', applyReagentFilters);     // 'change' for date
+    if (filterNameInput) filterNameInput.addEventListener('input', debounce(applyReagentFilters, 350));
+    if (filterLotInput) filterLotInput.addEventListener('input', debounce(applyReagentFilters, 350));
+    if (filterAnalyzerSelect) filterAnalyzerSelect.addEventListener('change', applyReagentFilters);
+    if (filterStatusSelect) filterStatusSelect.addEventListener('change', applyReagentFilters);
+    if (filterExpiryStartInput) filterExpiryStartInput.addEventListener('change', applyReagentFilters);
+    if (filterExpiryEndInput) filterExpiryEndInput.addEventListener('change', applyReagentFilters);
 
 
-    // --- Consumption Tab Event Listeners (remain as they were) ---
+    // --- Consumption Tab Event Listeners ---
     const addConsumptionBtn = document.getElementById('add-consumption-btn');
     const consumptionForm = document.getElementById('consumption-form');
     const addConsumptionItemBtn = document.getElementById('add-consumption-item-btn');
@@ -813,44 +815,102 @@ function debounce(func, delay) {
     if(addConsumptionItemBtn) addConsumptionItemBtn.addEventListener('click', addConsumptionItemRow);
     if(applyConsumptionFiltersBtn) applyConsumptionFiltersBtn.addEventListener('click', applyConsumptionFilters);
     if(clearConsumptionFiltersBtn) clearConsumptionFiltersBtn.addEventListener('click', clearConsumptionFilters);
-    if(toggleDeletedConsumptionBtn) toggleDeletedConsumptionBtn.addEventListener('click', () => {
-        showDeletedConsumption = !showDeletedConsumption;
-        toggleDeletedConsumptionBtn.textContent = showDeletedConsumption ? 'Hide Deleted' : 'Show Deleted';
-        populateConsumptionTable();
-    });
+    if(toggleDeletedConsumptionBtn) { // Check if the button itself exists
+        toggleDeletedConsumptionBtn.addEventListener('click', () => {
+            showDeletedConsumption = !showDeletedConsumption;
+            toggleDeletedConsumptionBtn.innerHTML = showDeletedConsumption ? '<i class="fas fa-eye-slash" style="margin-right: 5px;"></i>Hide Deleted' : '<i class="fas fa-eye" style="margin-right: 5px;"></i>Show Deleted';
+            populateConsumptionTable();
+        });
+    }
 
 
-    // --- Stock Log Tab Filters Event Listeners (remain as they were) ---
+    // --- Stock Log Tab Filters Event Listeners ---
     const applyStocklogFiltersBtn = document.getElementById('apply-stocklog-filters-btn');
     const clearStocklogFiltersBtn = document.getElementById('clear-stocklog-filters-btn');
     const toggleDeletedStocklogBtn = document.getElementById('toggle-deleted-stocklog-btn');
 
     if(applyStocklogFiltersBtn) applyStocklogFiltersBtn.addEventListener('click', applyStockLogFilters);
     if(clearStocklogFiltersBtn) clearStocklogFiltersBtn.addEventListener('click', clearStockLogFilters);
-    if(toggleDeletedStocklogBtn) toggleDeletedStocklogBtn.addEventListener('click', () => {
-        showDeletedStockLog = !showDeletedStockLog;
-        toggleDeletedStocklogBtn.textContent = showDeletedStockLog ? 'Hide Deleted' : 'Show Deleted';
-        populateStockLogTable();
-    });
+    if(toggleDeletedStocklogBtn) { // Check if the button itself exists
+        toggleDeletedStocklogBtn.addEventListener('click', () => {
+            showDeletedStockLog = !showDeletedStockLog;
+            toggleDeletedStocklogBtn.innerHTML = showDeletedStockLog ? '<i class="fas fa-eye-slash" style="margin-right: 5px;"></i>Hide Deleted' : '<i class="fas fa-eye" style="margin-right: 5px;"></i>Show Deleted';
+            populateStockLogTable();
+        });
+    }
 
-    // --- Report Buttons Event Listeners (remain as they were) ---
+
+    // --- Report Buttons Event Listeners ---
+    console.log("initMainEventListeners: Setting up report button listeners."); // 2. Confirms this section is reached
+
     const stockReportExcelBtn = document.getElementById('stock-report-excel-btn');
-    // ... (all other report button listeners) ...
-    if(stockReportExcelBtn) stockReportExcelBtn.addEventListener('click', () => generateStockReport(false));
-    // ... (ensure all report button listeners are present here)
+    const stockReportJpgBtn = document.getElementById('stock-report-jpg-btn');
+    const consumptionReportExcelBtn = document.getElementById('consumption-report-excel-btn');
+    const consumptionReportJpgBtn = document.getElementById('consumption-report-jpg-btn');
+    const expiryReportExcelBtn = document.getElementById('expiry-report-excel-btn');
+    const expiryReportJpgBtn = document.getElementById('expiry-report-jpg-btn');
+
+    // Log whether each button is found
+    console.log("stockReportExcelBtn found:", !!stockReportExcelBtn);
+    console.log("stockReportJpgBtn found:", !!stockReportJpgBtn);
+    console.log("consumptionReportExcelBtn found:", !!consumptionReportExcelBtn);
+    console.log("consumptionReportJpgBtn found:", !!consumptionReportJpgBtn);
+    console.log("expiryReportExcelBtn found:", !!expiryReportExcelBtn);
+    console.log("expiryReportJpgBtn found:", !!expiryReportJpgBtn);
 
 
-    // --- Generic Modal Close Buttons (remain as they were) ---
+    if (stockReportExcelBtn) {
+        stockReportExcelBtn.addEventListener('click', () => {
+            console.log("Stock Report EXCEL button CLICKED"); // 3a. Confirms specific listener fires
+            generateStockReport(false);
+        });
+    }
+    if (stockReportJpgBtn) {
+        stockReportJpgBtn.addEventListener('click', () => {
+            console.log("Stock Report JPG button CLICKED"); // 3b. Confirms specific listener fires
+            generateStockReport(true);
+        });
+    }
+
+    if (consumptionReportExcelBtn) {
+        consumptionReportExcelBtn.addEventListener('click', () => {
+            console.log("Consumption Report EXCEL button CLICKED");
+            generateConsumptionReport(false);
+        });
+    }
+    if (consumptionReportJpgBtn) {
+        consumptionReportJpgBtn.addEventListener('click', () => {
+            console.log("Consumption Report JPG button CLICKED");
+            generateConsumptionReport(true);
+        });
+    }
+
+    if (expiryReportExcelBtn) {
+        expiryReportExcelBtn.addEventListener('click', () => {
+            console.log("Expiry Report EXCEL button CLICKED");
+            generateExpiryReport(false);
+        });
+    }
+    if (expiryReportJpgBtn) {
+        expiryReportJpgBtn.addEventListener('click', () => {
+            console.log("Expiry Report JPG button CLICKED");
+            generateExpiryReport(true);
+        });
+    }
+
+    // --- Generic Modal Close Buttons ---
     document.querySelectorAll('.close-modal, .cancel-modal').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const modalId = e.target.dataset.modalId;
             if(modalId) closeModal(modalId);
-            else closeAllModals(); 
+            else closeAllModals();
         });
     });
-    
+
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
     if(confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+
+    console.log("initMainEventListeners: Function COMPLETED"); // 4. Confirms function ends
 }
 
 
@@ -1002,44 +1062,55 @@ function debounce(func, delay) {
         }
     }
 
-       function parseReagentBarcode(data) {
+           function parseReagentBarcode(data) {
         console.log("Raw barcode data for reagent modal:", data);
         let lotFound = null, expiryFound = null;
 
-        // Normalize GS1 group separator (ASCII 29) if present
-        const cleanData = data.replace(/\u001D/g, '␝'); // Using ␝ as a visible separator for regex
+        const cleanData = data.replace(/\u001D/g, '␝'); 
 
-        // Attempt to extract LOT (AI 10) - looking for '10' followed by characters until a separator or end
-        // Taking the last 4 characters of the matched lot string as per original scanner.html logic
         const lotMatch = cleanData.match(/10([^\x1D␝]+)/);
         if (lotMatch && lotMatch[1]) {
             const fullLot = lotMatch[1].trim();
             if (fullLot.length >= 4) {
                 lotFound = fullLot.slice(-4);
             } else {
-                lotFound = fullLot; // If less than 4 chars, take all
+                lotFound = fullLot;
             }
-            document.getElementById('reagent-lot-number').value = lotFound;
+            // Programmatically set the value
+            if (reagentLotInput) reagentLotInput.value = lotFound; // Use the cached DOM element
             console.log("Found lot:", lotFound, "(from full:", fullLot,")");
         }
 
-        // Attempt to extract EXPIRY (AI 17) - expecting YYMMDD format
         const expiryMatch = cleanData.match(/17(\d{6})/);
         if (expiryMatch && expiryMatch[1]) {
-            const rawExpiry = expiryMatch[1]; // Should be YYMMDD
+            const rawExpiry = expiryMatch[1]; 
             const year = `20${rawExpiry.substring(0, 2)}`;
             const month = rawExpiry.substring(2, 4);
             const day = rawExpiry.substring(4, 6);
 
-            // Basic validation for date components
             if (parseInt(month) >= 1 && parseInt(month) <= 12 && parseInt(day) >= 1 && parseInt(day) <= 31) {
                  expiryFound = `${year}-${month}-${day}`;
-                 document.getElementById('expiry-date').value = expiryFound;
+                 if (expiryDateInput) expiryDateInput.value = expiryFound; // Use the cached DOM element
                  console.log("Found expiry:", expiryFound);
             } else {
                 console.warn("Parsed expiry date components seem invalid:", year, month, day);
             }
         }
+
+        // --- FIX STARTS HERE ---
+        // After setting lotFound and expiryFound, explicitly call findReagentsByScannedLot
+        // if a lot was found and the input field exists.
+        if (lotFound && reagentLotInput) {
+            findReagentsByScannedLot(lotFound).then(() => {
+                updateModalUIBasedOnState(); // Also update UI after lot matches are processed
+            });
+        } else {
+            // If no lot was found, or input field doesn't exist,
+            // still ensure the UI state is updated.
+            updateModalUIBasedOnState();
+        }
+        // --- FIX ENDS HERE ---
+
 
         if (!lotFound && !expiryFound) {
             showAlert("Could not extract valid LOT or EXPIRY from the scanned data. Please check barcode format or enter manually.", 'warning');
@@ -1050,8 +1121,8 @@ function debounce(func, delay) {
         } else {
             showAlert("LOT and EXPIRY extracted successfully!", 'success');
         }
+        // Removed updateModalUIBasedOnState() from here as it's called conditionally above
     }
-
 
  async function findReagentsByScannedLot(lotNumber) {
     if (!scannedLotMatchesContainerEl || !reagentIdInput || !selectedReagentNameInputEl || !reagentLotInput || !expiryDateInput) return;
@@ -2406,54 +2477,94 @@ async function handleConsumptionFormSubmit(e) {
             showAlert('Report exported to Excel successfully.', 'success');
         } catch (error) { console.error("Excel export error:", error); showAlert('Failed to export to Excel.', 'error');}
     }
-    async function exportToJPG(elementOrData, filename, reportType) {
-        showLoading();
-        try {
-            let elementToCapture; let tempTableCreated = false;
-            const renderAreaId = `${reportType}-report-render-area`;
-            const renderArea = document.getElementById(renderAreaId);
+async function exportToJPG(elementOrData, filename, reportType) {
+    console.log(`[exportToJPG] Called for reportType: ${reportType}, filename: ${filename}`);
+    showLoading();
+    try {
+        let elementToCapture; let tempTableCreated = false;
+        const renderAreaId = `${reportType}-report-render-area`;
+        const renderArea = document.getElementById(renderAreaId);
+        console.log(`[exportToJPG] Render area ID: ${renderAreaId}, Element found:`, renderArea);
 
-            if (typeof elementOrData === 'string') { // If elementId is passed
-                elementToCapture = document.getElementById(elementOrData); 
-            } else { // If data array is passed
-                if (!renderArea) { showAlert('Render area for JPG report not found.', 'error'); hideLoading(); return; }
-                renderArea.innerHTML = ''; // Clear previous
-                const tempTable = document.createElement('table');
-                tempTable.style.borderCollapse = "collapse"; tempTable.style.width = "95%"; tempTable.style.margin = "10px auto";
-                tempTable.style.fontSize = "12px"; // Smaller font for better fit
-                
-                const a_thead = tempTable.createTHead(); const headerRow = a_thead.insertRow();
-                if (elementOrData.length > 0) {
-                    Object.keys(elementOrData[0] || {}).forEach(key => {
-                        const th = document.createElement('th'); th.textContent = key;
-                        th.style.border = "1px solid #ccc"; th.style.padding = "6px"; th.style.backgroundColor = "#e9ecef";
-                        th.style.textAlign = "left";
-                        headerRow.appendChild(th);
-                    });
-                }
-                const a_tbody = tempTable.createTBody();
-                elementOrData.forEach(rowData => {
-                    const row = a_tbody.insertRow();
-                    Object.values(rowData).forEach(value => {
-                        const cell = row.insertCell(); cell.textContent = value;
-                        cell.style.border = "1px solid #ccc"; cell.style.padding = "6px";
-                    });
-                });
-                renderArea.appendChild(tempTable); elementToCapture = tempTable;
-                renderArea.classList.remove('hidden'); tempTableCreated = true;
+        if (typeof elementOrData === 'string') {
+            elementToCapture = document.getElementById(elementOrData);
+            console.log(`[exportToJPG] Capturing existing element ID: ${elementOrData}, Element found:`, elementToCapture);
+        } else { // If data array is passed
+            if (!renderArea) {
+                showAlert('Render area for JPG report not found.', 'error');
+                console.error('[exportToJPG] Render area not found!');
+                hideLoading(); return;
             }
-            if (!elementToCapture) { showAlert('Element to capture for JPG not found.', 'error'); hideLoading(); return; }
-            
-            const canvas = await html2canvas(elementToCapture, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.92); // Use JPEG for smaller size
-            const link = document.createElement('a'); link.href = dataUrl;
-            link.download = `${filename}_${formatDate(new Date(), 'YYYYMMDD')}.jpg`;
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            showAlert('Report exported to JPG successfully.', 'success');
-            if (tempTableCreated && renderArea) { renderArea.innerHTML = ''; renderArea.classList.add('hidden');}
-        } catch (err) { console.error('Error exporting to JPG:', err); showAlert('Failed to export to JPG. Check console.', 'error');
-        } finally { hideLoading(); }
+            renderArea.innerHTML = ''; // Clear previous
+            const tempTable = document.createElement('table');
+            tempTable.style.borderCollapse = "collapse"; tempTable.style.width = "95%"; tempTable.style.margin = "10px auto";
+            tempTable.style.fontSize = "12px";
+
+            // ---- CORRECTED ORDER ----
+            const a_thead = tempTable.createTHead(); // Create thead first
+            const headerRow = a_thead.insertRow();   // Then create the headerRow
+
+            if (elementOrData.length > 0 && elementOrData[0]) { // Added check for elementOrData[0]
+                Object.keys(elementOrData[0]).forEach(key => { // No need for || {} if we check elementOrData[0]
+                    const th = document.createElement('th');
+                    th.textContent = key;
+                    th.style.border = "1px solid #ccc";
+                    th.style.padding = "6px";
+                    th.style.backgroundColor = "#e9ecef";
+                    th.style.textAlign = "left";
+                    headerRow.appendChild(th); // Now headerRow is defined
+                });
+            }
+
+            const a_tbody = tempTable.createTBody();
+            elementOrData.forEach(rowData => {
+                const row = a_tbody.insertRow();
+                Object.values(rowData).forEach(value => {
+                    const cell = row.insertCell();
+                    cell.textContent = value;
+                    cell.style.border = "1px solid #ccc";
+                    cell.style.padding = "6px";
+                });
+            });
+            // ---- END OF CORRECTED ORDER ----
+
+            renderArea.appendChild(tempTable);
+            elementToCapture = tempTable;
+            renderArea.classList.remove('hidden');
+            tempTableCreated = true;
+            console.log('[exportToJPG] Temporary table created and to be captured:', elementToCapture);
+        }
+
+        if (!elementToCapture) {
+            showAlert('Element to capture for JPG not found.', 'error');
+            console.error('[exportToJPG] elementToCapture is null or undefined!');
+            hideLoading(); return;
+        }
+
+        console.log('[exportToJPG] About to call html2canvas...');
+        const canvas = await html2canvas(elementToCapture, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: true });
+        console.log('[exportToJPG] html2canvas call completed. Canvas:', canvas);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        console.log('[exportToJPG] Data URL generated (first 100 chars):', dataUrl.substring(0,100));
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `${filename}_${formatDate(new Date(), 'YYYYMMDD')}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showAlert('Report exported to JPG successfully.', 'success');
+        if (tempTableCreated && renderArea) {
+            renderArea.innerHTML = '';
+            renderArea.classList.add('hidden');
+        }
+    } catch (err) {
+        console.error('[exportToJPG] Error exporting to JPG:', err);
+        showAlert(`Failed to export to JPG. Check console. Error: ${err.message}`, 'error');
+    } finally {
+        hideLoading();
     }
+}
     function generateStockReport(isJpg = false) {
         const activeReagents = reagentsCache.filter(r => !r.is_deleted);
         const today = moment().startOf('day'); const thirtyDaysFromNow = moment().add(30, 'days').endOf('day');
