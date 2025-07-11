@@ -26,7 +26,7 @@
             /* Background */
             --bg-primary: linear-gradient(135deg, #2e7887cb 0%, #8c4ba2 100%);
             --bg-card: #ffffff;
-            --bg-surface: #f8fafc;
+            --bg-surface: #ffceda15;
             
             /* Text */
             --text-primary: #1e293b;
@@ -117,8 +117,8 @@
 
         .logo i {
             margin-right: 10px;
-            color: #34d399;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            color: #00ffa2;
+            /* filter: drop-shadow(0 2px 4px rgba(48, 48, 48, 0.062)); */
         }
 
         .logo span { 
@@ -936,3 +936,389 @@
             font-weight: 900;
             margin-right: 5px;
         }
+
+
+
+
+
+
+
+
+
+        /*
+=================================================================
+ mobile.css - DETAILED Mobile Responsive Stylesheet
+ for Lab Reagent Stock Management System v2.1
+=================================================================
+- Author: Md. Arman Hossain (AI Assisted Redesign)
+- Purpose: Provides a professional, mobile-app-like experience.
+- Breakpoint: Applies to screens 768px wide or less.
+- Usage: Link this file in your HTML AFTER the main style.css.
+=================================================================
+*/
+
+@media (max-width: 768px) {
+
+    /* =================================== */
+    /*      1. Global Layout & Root      */
+    /* =================================== */
+    :root {
+        /* Slightly larger font on mobile for readability, especially in forms */
+        font-size: 16px; 
+    }
+
+    body {
+        -webkit-text-size-adjust: 100%; /* Prevents font scaling in landscape */
+    }
+
+    .container {
+        padding: 0 1rem; /* Use rem for scalable spacing */
+    }
+
+    .row {
+        flex-direction: column;
+        gap: 0; /* Remove desktop gap, handle spacing with margins */
+        margin-bottom: 1rem;
+    }
+
+    .col {
+        width: 100%;
+        margin-bottom: 1.25rem; /* Space between stacked columns */
+    }
+    .col:last-child {
+        margin-bottom: 0;
+    }
+
+    /* =================================== */
+    /*            2. Header              */
+    /* =================================== */
+    header {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: left; /* Center logo and author */
+    }
+
+    .logo {
+        font-size: 1rem;
+    }
+
+    .author {
+        position: static; /* Bring author info into the flow */
+        font-size: 0.55rem;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* =================================== */
+    /*       3. Dashboard & Tabs         */
+    /* =================================== */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Two equal columns for desktop */
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+
+#total-reagents-card {
+  grid-column: span 2; /* Full width for the first card */
+}
+
+.dashboard-card {
+  padding: 1rem;
+  background: #fff;
+  border-radius: 8px;
+
+  box-shadow: var(--shadow-sm, 0 2px 6px rgba(0,0,0,0.1));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  transition: box-shadow 0.3s ease;
+ 
+}
+
+.dashboard-card:hover {
+  transform: none; /* Avoids weird behavior on mobile */
+  box-shadow: var(--shadow-md);
+}
+
+#total-reagents-card{
+    padding: 0.5rem 1rem;
+}
+
+#total-reagents-card p {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dashboard-card h3 {
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.dashboard-card p {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+
+    /* --- KEY IMPROVEMENT: Scrollable Tabs --- */
+    .tabs {
+        display: flex;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        scrollbar-width: none; /* Hide scrollbar for Firefox */
+        padding: 4px;
+        margin-left: -1rem; /* Bleed to screen edges for app-like feel */
+        margin-right: -1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for Webkit browsers */
+    }
+
+    .tab {
+        flex: 0 0 auto; /* Prevent tabs from shrinking */
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+    }
+
+    /* =================================== */
+    /*        4. Cards & Filters         */
+    /* =================================== */
+    .card {
+        padding: 1rem;
+        border-radius: var(--radius-lg);
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0 0 1rem 0; /* Remove card-header padding, use margin on h2 */
+        border-bottom: 1px solid var(--gray-200);
+        margin-bottom: 1rem;
+    }
+    
+    .card-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .card-header .action-buttons,
+    .card-header button {
+        width: 100%; /* Make action buttons full-width */
+    }
+
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .filter-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .filters button {
+        margin-top: 0.5rem;
+    }
+
+    /* =================================== */
+    /*     5. Tables (Crucial for Mobile)    */
+    /* =================================== */
+    .table-responsive {
+        overflow-x: auto; /* THIS IS THE CORRECT WAY TO HANDLE TABLES */
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-md);
+        margin-left: -1rem; /* Bleed to edges */
+        margin-right: -1rem;
+        width: calc(100% + 2rem);
+    }
+
+    table {
+        min-width: 700px; /* Force table to be wide, activating horizontal scroll */
+        border-collapse: separate; /* Needed for border-spacing */
+        border-spacing: 0;
+    }
+
+    th, td {
+        padding: 1rem 0.75rem;
+        white-space: nowrap; /* Prevent text wrapping inside cells */
+        font-size: 0.9rem;
+    }
+
+    th {
+        font-size: 0.75rem;
+    }
+
+    /* Style action buttons in tables for better touch targets */
+    td .action-btn {
+        margin: 0 0.25rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    /* Bulk actions layout */
+    #reagent-bulk-actions-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+    #reagent-bulk-actions-container select {
+        width: 100%;
+        min-width: auto;
+    }
+
+    /* =================================== */
+    /*             6. Modals             */
+    /* =================================== */
+    .modal-backdrop {
+        padding: 0;
+        align-items: flex-end; /* Modals appear from bottom on mobile */
+    }
+
+    .modal {
+        width: 100%;
+        max-width: 100%;
+        height: 90vh; /* Use vh for viewport height */
+        max-height: 90vh;
+        margin: 0;
+        padding: 1.5rem 1rem;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0; /* Rounded top corners */
+        box-shadow: var(--shadow-xl);
+        overflow-y: auto; /* Enable vertical scrolling *inside* the modal */
+        animation: modalSlideUp 0.3s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    .modal-header {
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .modal-header h3 {
+        font-size: 1.2rem;
+    }
+
+    .close-modal {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+    }
+
+    /* Stack form action buttons, with primary action more accessible */
+    .modal form div[style*="justify-content:flex-end"] {
+        flex-direction: column-reverse; /* Primary button on top */
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+
+    /* =================================== */
+    /*       7. Forms & Buttons          */
+    /* =================================== */
+    label {
+        font-size: 0.9rem;
+    }
+
+    input, select, textarea {
+        padding: 0.9rem 1rem;
+        font-size: 1rem; /* 16px to prevent auto-zoom on iOS */
+    }
+
+    button {
+        width: 100%; /* Most buttons will be full-width */
+        padding: 0.9rem 1.25rem;
+        font-size: 1rem;
+        justify-content: center;
+    }
+    .action-buttons button, .card-header button {
+        margin: 0;
+    }
+    
+    /* Specific overrides for small, inline buttons */
+    .scanner-controls button, #parse-raw-scan-data-btn {
+        width: auto;
+        flex-grow: 1; /* Allow scan/parse buttons to share space */
+    }
+
+    .scanner-controls {
+        flex-wrap: wrap;
+    }
+    #reagent-scanner-raw {
+        width: 100%;
+        flex-basis: 100%;
+    }
+    
+    #toggle-register-new-fields-btn {
+        width: auto;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    /* =================================== */
+    /*      8. Specific Components       */
+    /* =================================== */
+    #reports-tab .card {
+        height: auto; /* Let content define height */
+    }
+
+    /* Alerts Position */
+    #alerts-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+        z-index: 2100; /* Above modal backdrop */
+    }
+
+    .consumption-item {
+        padding: 1rem;
+        position: relative;
+    }
+
+    /* Adjust remove button position for stacked layout */
+    .consumption-item-remove-btn {
+       position: absolute;
+       top: 0.5rem;
+       right: 0.5rem;
+       width: auto;
+       padding: 0.5rem;
+       background: transparent;
+       color: var(--danger-color);
+       box-shadow: none;
+    }
+    .consumption-item-remove-btn:hover {
+        background: #fee2e2;
+    }
+}
+
+
+
+

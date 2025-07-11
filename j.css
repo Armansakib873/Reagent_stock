@@ -1,0 +1,266 @@
+
+
+@media (max-width: 768px) {
+    /* --- General Layout & Typography --- */
+    body {
+        font-size: 14px; /* Adjust base font for mobile readability */
+        -webkit-text-size-adjust: 100%; /* Prevent font scaling on iOS */
+    }
+
+    .container {
+        padding: 0 10px; /* Reduce side padding */
+    }
+
+    h2 {
+        font-size: 20px; /* Make headings more compact */
+    }
+
+    h3 {
+        font-size: 18px;
+    }
+
+    /* --- Header --- */
+    header {
+        padding: 10px 0;
+        margin-bottom: 20px;
+    }
+
+    .logo {
+        font-size: 22px;
+    }
+
+    .author {
+        display: none; /* Hide author on small screens to save space */
+    }
+
+    /* --- Dashboard --- */
+    .dashboard {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .dashboard-card p {
+        font-size: 28px; /* Reduce number size on cards */
+    }
+
+    /* --- Tabs --- */
+    .tabs {
+        overflow-x: auto; /* Allow tabs to scroll horizontally */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        padding: 4px;
+        /* Hide scrollbar for a cleaner look */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none; /* Safari and Chrome */
+    }
+
+    .tab {
+        padding: 10px 15px;
+        font-size: 14px;
+        white-space: nowrap; /* Prevent tab text from wrapping */
+        flex-shrink: 0; /* Ensure tabs don't shrink */
+    }
+
+    /* --- Filters & Card Headers --- */
+    .filters {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch; /* Make filter groups full-width */
+    }
+
+    .filters button {
+        width: 100%;
+        justify-content: center; /* Center button content */
+    }
+
+    .filter-group {
+        min-width: auto;
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .card-header .action-buttons {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .card-header .action-buttons button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* --- Table Transformation to Card View --- */
+    .table-responsive {
+        border: none;
+        box-shadow: none;
+    }
+
+    table {
+        border: none;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    thead {
+        display: none; /* Hide the table headers, we'll recreate them */
+    }
+
+    tbody tr {
+        display: block;
+        margin-bottom: 15px;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+        padding: 15px;
+        background: white;
+    }
+
+    td {
+        display: flex; /* Use flex for alignment */
+        justify-content: space-between; /* Pushes label to left, value to right */
+        align-items: center;
+        padding: 10px 5px;
+        text-align: right; /* Align value to the right */
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    tr td:last-child {
+        border-bottom: none;
+    }
+
+    /* Create labels for table data. The most robust solution is adding a `data-label` attribute to each `<td>` in your JS.
+       The CSS-only fallback below using nth-child is brittle and will break if you reorder columns. */
+    td::before {
+        content: attr(data-label); /* Ideal solution: use data-label from JS */
+        font-weight: 600;
+        text-align: left;
+        color: var(--text-secondary);
+        padding-right: 10px;
+        flex-shrink: 0; /* Prevent label from shrinking */
+    }
+    
+    /* CSS-only fallback labels */
+    #reagents-table-body td:nth-of-type(2)::before { content: "Name"; }
+    #reagents-table-body td:nth-of-type(3)::before { content: "Lot #"; }
+    #reagents-table-body td:nth-of-type(4)::before { content: "Analyzer"; }
+    #reagents-table-body td:nth-of-type(5)::before { content: "Stock"; }
+    #reagents-table-body td:nth-of-type(6)::before { content: "Unit"; }
+    #reagents-table-body td:nth-of-type(7)::before { content: "Expires"; }
+    #reagents-table-body td:nth-of-type(8)::before { content: "Status"; }
+    #reagents-table-body td:nth-of-type(9)::before { content: "Actions"; }
+    
+    #consumption-table-body td:nth-of-type(1)::before { content: "Date"; }
+    #consumption-table-body td:nth-of-type(2)::before { content: "Reagent"; }
+    #consumption-table-body td:nth-of-type(3)::before { content: "Lot #"; }
+    #consumption-table-body td:nth-of-type(4)::before { content: "Quantity"; }
+    #consumption-table-body td:nth-of-type(5)::before { content: "Unit"; }
+    #consumption-table-body td:nth-of-type(6)::before { content: "Notes"; }
+    #consumption-table-body td:nth-of-type(7)::before { content: "Actions"; }
+
+    #stock-log-table-body td:nth-of-type(1)::before { content: "Date Rcvd"; }
+    #stock-log-table-body td:nth-of-type(2)::before { content: "Name"; }
+    #stock-log-table-body td:nth-of-type(3)::before { content: "Lot #"; }
+    #stock-log-table-body td:nth-of-type(4)::before { content: "Qty Rcvd"; }
+    #stock-log-table-body td:nth-of-type(5)::before { content: "Unit"; }
+    #stock-log-table-body td:nth-of-type(6)::before { content: "Notes"; }
+    #stock-log-table-body td:nth-of-type(7)::before { content: "Recorded At"; }
+    #stock-log-table-body td:nth-of-type(8)::before { content: "Actions"; }
+
+    /* Special handling for checkbox and action cells */
+    td:first-child,
+    td:last-child {
+        padding: 10px 0;
+    }
+    
+    td:first-child {
+        justify-content: flex-end; /* Align checkbox to the right */
+    }
+
+    td:first-child::before {
+        display: none; /* No label for checkbox */
+    }
+
+    .actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 5px;
+    }
+
+    .actions button {
+        flex-grow: 1; /* Make buttons fill the space */
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    /* --- Modals --- */
+    .modal-backdrop {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .modal {
+        margin: 0;
+        width: 100vw;
+        height: 100%;
+        max-width: 100%;
+        border-radius: 0; /* Full screen modal */
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .modal form {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .modal form > div:last-child {
+        margin-top: auto; /* Push buttons to the bottom */
+    }
+
+    .modal-header h3 {
+        font-size: 18px;
+    }
+    
+    .row {
+        flex-direction: column;
+        gap: 0;
+        margin-bottom: 0;
+    }
+
+    .row .col {
+        margin-bottom: 15px; /* Add margin between stacked columns */
+    }
+
+    /* Stack modal action buttons */
+    .modal form div[style*="flex-end"] {
+        flex-direction: column-reverse; /* Put primary action on bottom */
+        align-items: stretch;
+        gap: 10px !important; /* Override inline style */
+    }
+
+    .modal form div[style*="flex-end"] button {
+        width: 100%;
+        margin: 0;
+    }
+
+    /* Improve scanner controls layout */
+    .scanner-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .scanner-controls button {
+        width: 100%;
+        justify-content: center;
+    }
+}
